@@ -111,7 +111,7 @@ function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
             for (let j = 0; j < 8; ++j) {
                 b[j] = a[j];
             }
-            t = a[7] + Sigma1(a[4]) +  Ch(a[4], a[5], a[6]) + K[i] + w[i & 15];
+            t = a[7] + Sigma1(a[4]) + Ch(a[4], a[5], a[6]) + K[i] + w[i & 15];
             b[7] = t + Sigma0(a[0]) + Maj(a[0], a[1], a[2]);
             b[3] += t;
             for (let j = 0; j < 8; ++j) {
@@ -213,7 +213,6 @@ function _hash(out: Uint8Array, m: Uint8Array, n: isize): void {
 // HMAC
 
 function _hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
-    // let mac = new Uint8Array(32);
     let b = new Uint8Array(256);
     let ib = b.subarray(128);
     if (k.length > 128) {
@@ -574,8 +573,8 @@ function scalarbase(p: Int64Array[], s: Uint8Array): void {
 
 function _sign_keypair_from_seed(sk: Uint8Array): void {
     let pk = new Uint8Array(32);
-    let d  = new Uint8Array(64);
-    let p  = ge25519n();
+    let d = new Uint8Array(64);
+    let p = ge25519n();
 
     _hash(d, sk, 32);
     d[0] &= 248;

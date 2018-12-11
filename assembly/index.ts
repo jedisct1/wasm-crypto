@@ -39,8 +39,7 @@ function sigma1(x: u64): u64 {
     return R(x, 19) ^ R(x, 61) ^ (x >> 6);
 }
 
-@inline function Ch(x: u64, y: u64, z: u64):
-    u64 {
+@inline function Ch(x: u64, y: u64, z: u64): u64 {
     return (x & y) ^ (~x & z);
 }
 
@@ -51,14 +50,14 @@ function Maj(x: u64, y: u64, z: u64): u64 {
 
 function load64(x: Uint8Array, offset: isize): u64 {
     let u: u64 = 0;
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 8; ++i) {
         u = (u << 8) | x[offset + i];
     }
     return u;
 }
 
 function store64(x: Uint8Array, offset: isize, u: u64): void {
-    for (let i = 7; i >= 0; i--) {
+    for (let i = 7; i >= 0; --i) {
         x[offset + i] = u as u8;
         u >>= 8;
     }
@@ -95,44 +94,45 @@ let K: u64[] = [
 ];
 
 function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
-    let z: Uint64Array = new Uint64Array(8), b: Uint64Array = new Uint64Array(8),
+    let z: Uint64Array = new Uint64Array(8),
+        b: Uint64Array = new Uint64Array(8),
         a: Uint64Array = new Uint64Array(8),
         w: Uint64Array = new Uint64Array(16);
     let t: u64;
 
-    for (let i: isize = 0; i < 8; i++) {
+    for (let i = 0; i < 8; ++i) {
         z[i] = a[i] = load64(st, 8 * i);
     }
     let pos = 0;
     while (n >= 128) {
-        for (let i: isize = 0; i < 16; i++) {
+        for (let i = 0; i < 16; ++i) {
             w[i] = load64(m, 8 * i + pos);
         }
-        for (let i: isize = 0; i < 80; i++) {
-            for (let j: isize = 0; j < 8; j++) {
+        for (let i = 0; i < 80; ++i) {
+            for (let j = 0; j < 8; ++j) {
                 b[j] = a[j];
             }
-            t = a[7] + Sigma1(a[4]) + Ch(a[4], a[5], a[6]) + K[i] + w[i % 16];
+            t = a[7] + Sigma1(a[4]) +  Ch(a[4], a[5], a[6]) + K[i] + w[i & 15];
             b[7] = t + Sigma0(a[0]) + Maj(a[0], a[1], a[2]);
             b[3] += t;
-            for (let j: isize = 0; j < 8; j++) {
-                a[(j + 1) % 8] = b[j];
+            for (let j = 0; j < 8; ++j) {
+                a[(j + 1) & 7] = b[j];
             }
-            if (i % 16 === 15) {
-                for (let j: isize = 0; j < 16; j++) {
-                    w[j] += w[(j + 9) % 16] + sigma0(w[(j + 1) % 16]) +
-                        sigma1(w[(j + 14) % 16]);
+            if ((i & 15) === 15) {
+                for (let j = 0; j < 16; ++j) {
+                    w[j] += w[(j + 9) & 15] + sigma0(w[(j + 1) & 15]) +
+                        sigma1(w[(j + 14) & 15]);
                 }
             }
         }
-        for (let i: isize = 0; i < 8; i++) {
-            a[i] = a[i] + z[i];
+        for (let i = 0; i < 8; ++i) {
+            a[i] += z[i];
             z[i] = a[i];
         }
         pos += 128;
         n -= 128;
     }
-    for (let i: isize = 0; i < 8; i++) {
+    for (let i = 0; i < 8; ++i) {
         store64(st, 8 * i, z[i]);
     }
     return n;
@@ -145,15 +145,16 @@ let iv_: u8[] = [
     0xd1, 0x9b, 0x05, 0x68, 0x8c, 0x2b, 0x3e, 0x6c, 0x1f, 0x1f, 0x83, 0xd9, 0xab,
     0xfb, 0x41, 0xbd, 0x6b, 0x5b, 0xe0, 0xcd, 0x19, 0x13, 0x7e, 0x21, 0x79,
 ];
+
 let iv: Uint8Array = new Uint8Array(64);
-for (let i = 0; i < 64; i++) {
+for (let i = 0; i < 64; ++i) {
     iv[i] = iv_[i];
 }
 
 function _hash_init(): Uint8Array {
     let st = new Uint8Array(64 + 128 + 8 * 2);
 
-    for (let i: isize = 0; i < 64; i++) {
+    for (let i = 0; i < 64; ++i) {
         st[i] = iv[i];
     }
     return st;
@@ -194,11 +195,11 @@ function _hash_final(
 
     set_u8(x, w.subarray(0, r), 0);
     x[r] = 128;
-    r = 256 - 128 * (r < 112 ? 1 : 0);
+    r = 256 - 128 * isize(r < 112);
     x[r - 9] = 0;
     store64(x, r - 8, t << 3);
     _hashblocks(st, x, r);
-    for (let i: isize = 0; i < 64; i++) {
+    for (let i = 0; i < 64; ++i) {
         out[i] = st[i];
     }
 }
@@ -213,18 +214,18 @@ function _hash(out: Uint8Array, m: Uint8Array, n: isize): void {
 // HMAC
 
 function _hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
-    let mac = new Uint8Array(32);
+    // let mac = new Uint8Array(32);
     let b = new Uint8Array(256);
     let ib = b.subarray(128);
     if (k.length > 128) {
         k = hash(k);
     }
     set_u8(b, k, 0);
-    for (let i = 0; i < 128; i++) {
+    for (let i = 0; i < 128; ++i) {
         b[i] ^= 0x5c;
     }
     set_u8(ib, k, 0);
-    for (let i = 0; i < 128; i++) {
+    for (let i = 0; i < 128; ++i) {
         ib[i] ^= 0x36;
     }
     let st = _hash_init();
@@ -240,7 +241,7 @@ function _hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
 function _verify_32(x: Uint8Array, y: Uint8Array): bool {
     let d: u8 = 0;
 
-    for (let i: isize = 0; i < 32; i++) {
+    for (let i = 0; i < 32; ++i) {
         d |= x[i] ^ y[i];
     }
     return d === 0;
@@ -256,7 +257,7 @@ function fe25519n(): Int64Array {
 function fe25519(init: i64[]): Int64Array {
     let r: Int64Array = new Int64Array(16);
 
-    for (let i: isize = 0; i < init.length; i++) {
+    for (let i = 0, len = init.length; i < len; ++i) {
         r[i] = init[i];
     }
     return r;
@@ -286,7 +287,7 @@ let I: Int64Array = fe25519([
 ]);
 
 function fe25519_copy(r: Int64Array, a: Int64Array): void {
-    for (let i: isize = 0; i < 16; i++) {
+    for (let i = 0; i < 16; ++i) {
         r[i] = a[i];
     }
 }
@@ -294,10 +295,10 @@ function fe25519_copy(r: Int64Array, a: Int64Array): void {
 function fe25519_car(o: Int64Array): void {
     let c: i64;
 
-    for (let i: isize = 0; i < 16; i++) {
+    for (let i = 0; i < 16; ++i) {
         o[i] += (1 << 16);
         c = o[i] >> 16;
-        o[(i + 1) * (i < 15 ? 1 : 0)] += c - 1 + 37 * (c - 1) * (i === 15 ? 1 : 0);
+        o[(i + 1) * isize(i < 15)] += c - 1 + 37 * (c - 1) * isize(i === 15);
         o[i] -= c << 16;
     }
 }
@@ -306,7 +307,7 @@ function fe25519_sel(p: Int64Array, q: Int64Array, b: i64): void {
     let t: i64;
     let c: i64 = ~(b - 1);
 
-    for (let i: isize = 0; i < 16; i++) {
+    for (let i = 0; i < 16; ++i) {
         t = c & (p[i] ^ q[i]);
         p[i] ^= t;
         q[i] ^= t;
@@ -324,9 +325,9 @@ function fe25519_pack(o: Uint8Array, n: Int64Array): void {
     fe25519_car(t);
     fe25519_car(t);
     fe25519_car(t);
-    for (let j: isize = 0; j < 2; j++) {
+    for (let j = 0; j < 2; ++j) {
         m[0] = t[0] - 0xffed;
-        for (let i: isize = 1; i < 15; i++) {
+        for (let i = 1; i < 15; ++i) {
             m[i] = t[i] - 0xffff - ((m[i - 1] >> 16) & 1);
             m[i - 1] &= 0xffff;
         }
@@ -335,9 +336,10 @@ function fe25519_pack(o: Uint8Array, n: Int64Array): void {
         m[14] &= 0xffff;
         fe25519_sel(t, m, 1 - b);
     }
-    for (let i: isize = 0; i < 16; i++) {
-        o[2 * i] = t[i] as u32 & 0xff;
-        o[2 * i + 1] = t[i] as u32 >> 8;
+    for (let i = 0; i < 16; ++i) {
+        let ti = t[i] as u32;
+        o[2 * i + 0] = ti & 0xff;
+        o[2 * i + 1] = ti >> 8;
     }
 }
 
@@ -358,20 +360,20 @@ function fe25519_par(a: Int64Array): u8 {
 }
 
 function fe25519_unpack(o: Int64Array, n: Uint8Array): void {
-    for (let i: isize = 0; i < 16; i++) {
+    for (let i = 0; i < 16; ++i) {
         o[i] = (n[2 * i] as i64) + (n[2 * i + 1] as i64 << 8);
     }
     o[15] &= 0x7fff;
 }
 
 function fe25519_add(o: Int64Array, a: Int64Array, b: Int64Array): void {
-    for (let i: isize = 0; i < 16; i++) {
+    for (let i = 0; i < 16; ++i) {
         o[i] = (a[i] + b[i]);
     }
 }
 
 function fe25519_sub(o: Int64Array, a: Int64Array, b: Int64Array): void {
-    for (let i: isize = 0; i < 16; i++) {
+    for (let i = 0; i < 16; ++i) {
         o[i] = a[i] - b[i];
     }
 }
@@ -380,15 +382,15 @@ function fe25519_mul(o: Int64Array, a: Int64Array, b: Int64Array): void {
     // 31 items are enough, but AssemblyScript will blow up when using the tlsf allocator if we don't allocate 32.
     let t = new Int64Array(31 + 1);
 
-    for (let i: isize = 0; i < 16; i++) {
-        for (let j: isize = 0; j < 16; j++) {
+    for (let i = 0; i < 16; ++i) {
+        for (let j = 0; j < 16; ++j) {
             t[i + j] += a[i] * b[j];
         }
     }
-    for (let i: isize = 0; i < 15; i++) {
+    for (let i = 0; i < 15; ++i) {
         t[i] += 38 as i64 * t[i + 16];
     }
-    for (let i: isize = 0; i < 16; i++) {
+    for (let i = 0; i < 16; ++i) {
         o[i] = t[i];
     }
     fe25519_car(o);
@@ -402,16 +404,16 @@ function fe25519_sq(o: Int64Array, a: Int64Array): void {
 function fe25519_inv(o: Int64Array, i: Int64Array): void {
     let c = fe25519n();
 
-    for (let a: isize = 0; a < 16; a++) {
+    for (let a = 0; a < 16; ++a) {
         c[a] = i[a];
     }
-    for (let a: isize = 253; a >= 0; a--) {
+    for (let a = 253; a >= 0; --a) {
         fe25519_sq(c, c);
         if (a !== 2 && a !== 4) {
             fe25519_mul(c, c, i);
         }
     }
-    for (let a: isize = 0; a < 16; a++) {
+    for (let a = 0; a < 16; ++a) {
         o[a] = c[a];
     }
 }
@@ -419,16 +421,16 @@ function fe25519_inv(o: Int64Array, i: Int64Array): void {
 function fe25519_pow2523(o: Int64Array, i: Int64Array): void {
     let c = fe25519n();
 
-    for (let a: isize = 0; a < 16; a++) {
+    for (let a = 0; a < 16; ++a) {
         c[a] = i[a];
     }
-    for (let a: isize = 250; a >= 0; a--) {
+    for (let a = 250; a >= 0; --a) {
         fe25519_sq(c, c);
         if (a !== 1) {
             fe25519_mul(c, c, i);
         }
     }
-    for (let a: isize = 0; a < 16; a++) {
+    for (let a = 0; a < 16; ++a) {
         o[a] = c[a];
     }
 }
@@ -455,7 +457,7 @@ _L[31] = 16;
 function fe25519_modL(r: Uint8Array, x: Int64Array): void {
     let carry: i64;
 
-    for (let i: isize = 63; i >= 32; --i) {
+    for (let i = 63; i >= 32; --i) {
         carry = 0;
         let k = i - 12;
         for (let j = i - 32; j < k; ++j) {
@@ -467,15 +469,15 @@ function fe25519_modL(r: Uint8Array, x: Int64Array): void {
         x[i] = 0;
     }
     carry = 0;
-    for (let j: isize = 0; j < 32; j++) {
+    for (let j = 0; j < 32; ++j) {
         x[j] += carry - (x[31] >> 4) * _L[j];
         carry = x[j] >> 8;
         x[j] &= 255;
     }
-    for (let j: isize = 0; j < 32; j++) {
+    for (let j = 0; j < 32; ++j) {
         x[j] -= carry * _L[j];
     }
-    for (let i: isize = 0; i < 32; i++) {
+    for (let i = 0; i < 32; ++i) {
         x[i + 1] += x[i] >> 8;
         r[i] = x[i] as u8;
     }
@@ -484,10 +486,10 @@ function fe25519_modL(r: Uint8Array, x: Int64Array): void {
 function fe25519_reduce(r: Uint8Array): void {
     let x = new Int64Array(64);
 
-    for (let i: isize = 0; i < 64; i++) {
+    for (let i = 0; i < 64; ++i) {
         x[i] = r[i];
     }
-    for (let i: isize = 0; i < 64; i++) {
+    for (let i = 0; i < 64; ++i) {
         r[i] = 0;
     }
     fe25519_modL(r, x);
@@ -528,8 +530,9 @@ function add(p: Int64Array[], q: Int64Array[]): void {
     fe25519_mul(p[3], e, h);
 }
 
+@inline
 function cswap(p: Int64Array[], q: Int64Array[], b: u8): void {
-    for (let i: isize = 0; i < 4; i++) {
+    for (let i = 0; i < 4; ++i) {
         fe25519_sel(p[i], q[i], b);
     }
 }
@@ -550,8 +553,8 @@ function scalarmult(p: Int64Array[], q: Int64Array[], s: Uint8Array): void {
     fe25519_copy(p[1], fe25519_1);
     fe25519_copy(p[2], fe25519_1);
     fe25519_copy(p[3], fe25519_0);
-    for (let i: isize = 255; i >= 0; --i) {
-        b = (s[(i / 8)] >> (i as u8 & 7)) & 1;
+    for (let i = 255; i >= 0; --i) {
+        b = (s[(i >> 3)] >> (i as u8 & 7)) & 1;
         cswap(p, q, b);
         add(q, p);
         add(p, p);
@@ -573,16 +576,15 @@ function scalarbase(p: Int64Array[], s: Uint8Array): void {
 
 function _sign_keypair_from_seed(sk: Uint8Array): void {
     let pk = new Uint8Array(32);
-    let d = new Uint8Array(64);
-    let p: Int64Array[] = ge25519n();
+    let d  = new Uint8Array(64);
+    let p  = ge25519n();
 
     _hash(d, sk, 32);
     d[0] &= 248;
-    d[31] &= 127;
-    d[31] |= 64;
+    d[31] = (d[31] & 127) | 64;
     scalarbase(p, d);
     pack(pk, p);
-    for (let i: isize = 0; i < 32; i++) {
+    for (let i = 0; i < 32; ++i) {
         sk[i + 32] = pk[i];
     }
 }
@@ -628,27 +630,26 @@ function unpackneg(r: Int64Array[], p: Uint8Array): bool {
 function is_canonical(s: Uint8Array): bool {
     let c: u32 = (s[31] & 0x7f) ^ 0x7f;
 
-    for (let i: usize = 30; i > 0; i--) {
+    for (let i = 30; i > 0; --i) {
         c |= s[i] ^ 0xff;
     }
-    c = (c - 1) >>> 8;
-    let d: u32 = ((0xed - 1) as u32 - (s[0] as u32)) >>> 8;
+    c = (c - 1) >> 8;
+    let d = ((0xed - 1) as u32 - (s[0] as u32)) >> 8;
 
     return !(c & d & 1);
 }
 
 // Ed25519
 
-let B: Uint8Array = new Uint8Array(32);
-for (let i: isize = 0; i < 32; i++) {
+let B = new Uint8Array(32);
+for (let i = 0; i < 32; ++i) {
     B[i] = 0x66;
 }
 
-function _sign_synthetic_r_hv(
-    hs: Uint8Array, r: isize, Z: Uint8Array, sk: Uint8Array): isize {
-    let zeros: Uint8Array = new Uint8Array(128);
+function _sign_synthetic_r_hv(hs: Uint8Array, r: isize, Z: Uint8Array, sk: Uint8Array): isize {
+    let zeros = new Uint8Array(128);
     let empty_labelset = new Uint8Array(3);
-    let Zlen: isize = Z.length;
+    let Zlen = Z.length;
 
     if (Zlen > 128 - (32 + 3)) {
         Z = hash(Z);
@@ -668,9 +669,8 @@ function _sign_synthetic_r_hv(
     return r;
 }
 
-function _sign_detached(
-    sig: Uint8Array, m: Uint8Array, sk: Uint8Array, Z: Uint8Array): void {
-    let R: Int64Array[] = ge25519n();
+function _sign_detached(sig: Uint8Array, m: Uint8Array, sk: Uint8Array, Z: Uint8Array): void {
+    let R = ge25519n();
     let az = new Uint8Array(64);
     let nonce = new Uint8Array(64);
     let hram = new Uint8Array(64);
@@ -699,23 +699,21 @@ function _sign_detached(
     _hash_final(hs, hram, 64 + mlen, r);
     fe25519_reduce(hram);
     az[0] &= 248;
-    az[31] &= 127;
-    az[31] |= 64;
-    for (let i: isize = 0; i < 32; i++) {
+    az[31] = (az[31] & 127) | 64;
+    for (let i = 0; i < 32; ++i) {
         x[i] = nonce[i];
     }
-    for (let i: isize = 0; i < 32; i++) {
-        for (let j: isize = 0; j < 32; j++) {
+    for (let i = 0; i < 32; ++i) {
+        for (let j = 0; j < 32; ++j) {
             x[i + j] += (hram[i] as i64) * (az[j] as i64);
         }
     }
     fe25519_modL(sig.subarray(32), x);
 }
 
-function _sign_verify_detached(
-    sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bool {
-    let A: Int64Array[] = ge25519n();
-    let R: Int64Array[] = ge25519n();
+function _sign_verify_detached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bool {
+    let A = ge25519n();
+    let R = ge25519n();
     let rcheck = new Uint8Array(32);
     let h = new Uint8Array(64);
 
@@ -782,7 +780,7 @@ export const hmac_BYTES: isize = 64;
  * @param x Array to clear
  */
 export function memzero(x: Uint8Array): void {
-    for (let i: isize = 0, j: isize = x.length; i < j; i++) {
+    for (let i = 0, j = x.length; i < j; ++i) {
         x[i] = 0;
     }
 }
@@ -800,7 +798,7 @@ export function equals(x: Uint8Array, y: Uint8Array): bool {
     if (len === 0 || len !== y.length) {
         return false;
     }
-    for (let i: isize = 0; i < len; i++) {
+    for (let i = 0; i < len; ++i) {
         d |= x[i] ^ y[i];
     }
     return d === 0;
@@ -828,8 +826,7 @@ export function sign(m: Uint8Array, sk: Uint8Array, Z: Uint8Array): Uint8Array {
  * @param pk Public key
  * @returns `true` on success
  */
-export function sign_verify(
-    m: Uint8Array, sig: Uint8Array, pk: Uint8Array): bool {
+export function sign_verify(m: Uint8Array, sig: Uint8Array, pk: Uint8Array): bool {
     if (sig.length !== sign_BYTES) {
         throw new Error("bad signature size");
     }
@@ -863,9 +860,10 @@ export function sign_keypair_from_seed(seed: Uint8Array): Uint8Array {
  * @returns Public key
  */
 export function sign_public_key(kp: Uint8Array): Uint8Array {
-    let pk = new Uint8Array(sign_PUBLICKEYBYTES);
+    const len = sign_PUBLICKEYBYTES;
+    let pk = new Uint8Array(len);
 
-    for (let i = 0; i < sign_PUBLICKEYBYTES; i++) {
+    for (let i = 0; i < len; ++i) {
         pk[i] = kp[i + 32];
     }
     return pk;
@@ -877,9 +875,10 @@ export function sign_public_key(kp: Uint8Array): Uint8Array {
  * @returns Secret key
  */
 export function sign_secret_key(kp: Uint8Array): Uint8Array {
-    let sk = new Uint8Array(sign_SECRETKEYBYTES);
+    const len = sign_SECRETKEYBYTES;
+    let sk = new Uint8Array(len);
 
-    for (let i = 0; i < sign_SECRETKEYBYTES; i++) {
+    for (let i = 0; i < len; ++i) {
         sk[i] = kp[i];
     }
     return sk;

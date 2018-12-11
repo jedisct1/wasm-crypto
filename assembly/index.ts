@@ -14,28 +14,28 @@ function set_u8(t: Uint8Array, s: Uint8Array, o: isize): void {
 }
 
 @inline
-function R(x: u64, c: u32): u64 {
-    return (x >> c) | (x << (64 - c));
+function ror(x: u64, c: u32): u64 {
+    return (x >>> c) | (x << (64 - c));
 }
 
 @inline
 function Sigma0(x: u64): u64 {
-    return R(x, 28) ^ R(x, 34) ^ R(x, 39);
+    return ror(x, 28) ^ ror(x, 34) ^ ror(x, 39);
 }
 
 @inline
 function Sigma1(x: u64): u64 {
-    return R(x, 14) ^ R(x, 18) ^ R(x, 41);
+    return ror(x, 14) ^ ror(x, 18) ^ ror(x, 41);
 }
 
 @inline
 function sigma0(x: u64): u64 {
-    return R(x, 1) ^ R(x, 8) ^ (x >> 7);
+    return ror(x, 1) ^ ror(x, 8) ^ (x >> 7);
 }
 
 @inline
 function sigma1(x: u64): u64 {
-    return R(x, 19) ^ R(x, 61) ^ (x >> 6);
+    return ror(x, 19) ^ ror(x, 61) ^ (x >> 6);
 }
 
 @inline function Ch(x: u64, y: u64, z: u64): u64 {

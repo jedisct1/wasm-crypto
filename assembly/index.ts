@@ -204,11 +204,10 @@ function _hash_final(
 }
 
 function _hash(out: Uint8Array, m: Uint8Array, n: isize): void {
-    let t = n;
     let st = _hash_init();
     let r = _hash_update(st, m, n, 0);
 
-    _hash_final(st, out, t, r);
+    _hash_final(st, out, n, r);
 }
 
 // HMAC
@@ -651,7 +650,8 @@ function _sign_synthetic_r_hv(
     let Zlen: isize = Z.length;
 
     if (Zlen > 128 - (32 + 3)) {
-        Zlen = 128 - (32 + 3);
+        Z = hash(Z);
+        Zlen = Z.length;
     }
     empty_labelset[0] = 0x02;
 

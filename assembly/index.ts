@@ -377,7 +377,8 @@ function fe25519_sub(o: Int64Array, a: Int64Array, b: Int64Array): void {
 }
 
 function fe25519_mul(o: Int64Array, a: Int64Array, b: Int64Array): void {
-    let t = new Int64Array(31);
+    // 31 items are enough, but AssemblyScript will blow up when using the tlsf allocator if we don't allocate 32.
+    let t = new Int64Array(31 + 1);
 
     for (let i: isize = 0; i < 16; i++) {
         for (let j: isize = 0; j < 16; j++) {

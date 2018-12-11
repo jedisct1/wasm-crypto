@@ -1,8 +1,7 @@
 // tslint:disable-next-line:no-reference
 /// <reference path="../node_modules/assemblyscript/index.d.ts" />
 
-// Use arena or buddy - The tlsf allocator appears to be currently buggy.
-import "allocator/buddy";
+import "allocator/tlsf";
 export { memory };
 
 // SHA512
@@ -379,8 +378,7 @@ function fe25519_sub(o: Int64Array, a: Int64Array, b: Int64Array): void {
 }
 
 function fe25519_mul(o: Int64Array, a: Int64Array, b: Int64Array): void {
-    // 31 items are enough, but AssemblyScript will blow up when using the tlsf allocator if we don't allocate 32.
-    let t = new Int64Array(31 + 1);
+    let t = new Int64Array(31);
 
     for (let i = 0; i < 16; ++i) {
         for (let j = 0; j < 16; ++j) {

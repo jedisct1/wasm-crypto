@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "asbuild:untouched": "asc assembly/index.ts -b build/untouched.wasm -t build/untouched.wat --sourceMap --validate --debug --importMemory",
-    "asbuild:optimized": "asc assembly/index.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate -O3 --importMemory",
+    "asbuild:untouched": "asc assembly/index.ts assembly/precomp.ts -b build/untouched.wasm -t build/untouched.wat --sourceMap --validate --debug --importMemory",
+    "asbuild:optimized": "asc assembly/index.ts assembly/precomp.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate -O3 --importMemory",
     "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized"
   },
   "devDependencies": {

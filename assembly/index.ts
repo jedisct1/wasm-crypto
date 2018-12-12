@@ -403,9 +403,7 @@ function fe25519_pack(o: Uint8Array, n: Int64Array):
     let m = fe25519n();
     let t = fe25519n();
 
-    for (let i: isize = 0; i < 16; i++) {
-        t[i] = n[i];
-    }
+    fe25519_copy(t, n);
     fe25519_car(t);
     fe25519_car(t);
     fe25519_car(t);
@@ -479,9 +477,7 @@ function fe25519_mul(o: Int64Array, a: Int64Array, b: Int64Array):
     for (let i = 0; i < 15; ++i) {
         t[i] += 38 as i64 * t[i + 16];
     }
-    for (let i = 0; i < 16; ++i) {
-        o[i] = t[i];
-    }
+    fe25519_copy(o, t);
     fe25519_car(o);
     fe25519_car(o);
 }
@@ -495,36 +491,28 @@ function fe25519_inv(o: Int64Array, i: Int64Array):
     void {
     let c = fe25519n();
 
-    for (let a = 0; a < 16; ++a) {
-        c[a] = i[a];
-    }
+    fe25519_copy(c, i);
     for (let a = 253; a >= 0; --a) {
         fe25519_sq(c, c);
         if (a !== 2 && a !== 4) {
             fe25519_mul(c, c, i);
         }
     }
-    for (let a = 0; a < 16; ++a) {
-        o[a] = c[a];
-    }
+    fe25519_copy(o, c);
 }
 
 function fe25519_pow2523(o: Int64Array, i: Int64Array):
     void {
     let c = fe25519n();
 
-    for (let a = 0; a < 16; ++a) {
-        c[a] = i[a];
-    }
+    fe25519_copy(c, i);
     for (let a = 250; a >= 0; --a) {
         fe25519_sq(c, c);
         if (a !== 1) {
             fe25519_mul(c, c, i);
         }
     }
-    for (let a = 0; a < 16; ++a) {
-        o[a] = c[a];
-    }
+    fe25519_copy(o, c);
 }
 
 let _L: Int64Array = new Int64Array(32);

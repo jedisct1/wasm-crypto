@@ -372,7 +372,7 @@ function fe25519_car(o: Int64Array): void {
     }
 }
 
-function fe25519_sel(p: Int64Array, q: Int64Array, b: i64): void {
+function fe25519_cswap(p: Int64Array, q: Int64Array, b: i64): void {
     let t: i64;
     let c: i64 = ~(b - 1);
 
@@ -411,7 +411,7 @@ function fe25519_pack(o: Uint8Array, n: Int64Array): void {
         m[15] = t[15] - 0x7fff - ((m[14] >> 16) & 1);
         b = (m[15] >> 16) & 1;
         m[14] &= 0xffff;
-        fe25519_sel(t, m, 1 - b);
+        fe25519_cswap(t, m, 1 - b);
     }
     for (let i = 0; i < 16; ++i) {
         let ti = t[i] as u32;
@@ -611,7 +611,7 @@ function add(p: Int64Array[], q: Int64Array[]):
 @inline function cswap(p: Int64Array[], q: Int64Array[], b: u8):
     void {
     for (let i = 0; i < 4; ++i) {
-        fe25519_sel(p[i], q[i], b);
+        fe25519_cswap(p[i], q[i], b);
     }
 }
 

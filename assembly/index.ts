@@ -383,6 +383,14 @@ function fe25519_sel(p: Int64Array, q: Int64Array, b: i64): void {
     }
 }
 
+function fe25519_cmov(p: Int64Array, q: Int64Array, b: i64): void {
+    let c: i64 = ~(b - 1);
+
+    for (let i = 0; i < 16; ++i) {
+        p[i] ^= ((p[i] ^ q[i]) & c);
+    }
+}
+
 function fe25519_pack(o: Uint8Array, n: Int64Array): void {
     let b: i64;
     let m = fe25519n();
@@ -607,6 +615,13 @@ function add(p: Int64Array[], q: Int64Array[]):
     }
 }
 
+@inline function cmov(p: Int64Array[], q: Int64Array[], b: u8):
+    void {
+    for (let i = 0; i < 4; ++i) {
+        fe25519_cmov(p[i], q[i], b);
+    }
+}
+
 function pack(r: Uint8Array, p: Int64Array[]):
     void {
     let tx = fe25519n(), ty = fe25519n(), zi = fe25519n();
@@ -651,9 +666,12 @@ function scalarmult_base(p: Int64Array[], s: Uint8Array):
         q[1] = fe25519(precomp_base[i][1]);
         q[2] = fe25519(precomp_base[i][2]);
         q[3] = fe25519(precomp_base[i][3]);
-        cswap(t, p, b);
+        fe25519_copy(t[0], p[0]);
+        fe25519_copy(t[1], p[1]);
+        fe25519_copy(t[2], p[2]);
+        fe25519_copy(t[3], p[3]);
         add(t, q);
-        cswap(t, p, b);
+        cmov(p, t, b);
         add(q, q);
     }
 }

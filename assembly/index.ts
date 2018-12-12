@@ -244,7 +244,8 @@ function _verify_32(x: Uint8Array, y: Uint8Array): bool {
     return d === 0;
 }
 
-// mod(2^255-19) field arithmetic
+// mod(2^255-19) field arithmetic - Doesn't use 51-bit limbs yet to keep the
+// code short and simple
 
 @inline
 function fe25519n():
@@ -355,13 +356,16 @@ let I: Int64Array = fe25519([
     0x2b83,
 ]);
 
-function fe25519_copy(r: Int64Array, a: Int64Array): void {
+@inline
+function fe25519_copy(r: Int64Array, a: Int64Array):
+    void {
     for (let i = 0; i < 16; ++i) {
         r[i] = a[i];
     }
 }
 
-function fe25519_car(o: Int64Array): void {
+function fe25519_car(o: Int64Array):
+    void {
     let c: i64;
 
     for (let i = 0; i < 16; ++i) {
@@ -372,7 +376,8 @@ function fe25519_car(o: Int64Array): void {
     }
 }
 
-function fe25519_cswap(p: Int64Array, q: Int64Array, b: i64): void {
+function fe25519_cswap(p: Int64Array, q: Int64Array, b: i64):
+    void {
     let t: i64;
     let c: i64 = ~(b - 1);
 
@@ -383,7 +388,8 @@ function fe25519_cswap(p: Int64Array, q: Int64Array, b: i64): void {
     }
 }
 
-function fe25519_cmov(p: Int64Array, q: Int64Array, b: i64): void {
+function fe25519_cmov(p: Int64Array, q: Int64Array, b: i64):
+    void {
     let c: i64 = ~(b - 1);
 
     for (let i = 0; i < 16; ++i) {
@@ -391,7 +397,8 @@ function fe25519_cmov(p: Int64Array, q: Int64Array, b: i64): void {
     }
 }
 
-function fe25519_pack(o: Uint8Array, n: Int64Array): void {
+function fe25519_pack(o: Uint8Array, n: Int64Array):
+    void {
     let b: i64;
     let m = fe25519n();
     let t = fe25519n();
@@ -420,7 +427,8 @@ function fe25519_pack(o: Uint8Array, n: Int64Array): void {
     }
 }
 
-function fe25519_eq(a: Int64Array, b: Int64Array): bool {
+function fe25519_eq(a: Int64Array, b: Int64Array):
+    bool {
     let c = new Uint8Array(32), d = new Uint8Array(32);
 
     fe25519_pack(c, a);
@@ -429,33 +437,38 @@ function fe25519_eq(a: Int64Array, b: Int64Array): bool {
     return _verify_32(c, d);
 }
 
-function fe25519_par(a: Int64Array): u8 {
+function fe25519_par(a: Int64Array):
+    u8 {
     let d = new Uint8Array(32);
     fe25519_pack(d, a);
 
     return d[0] & 1;
 }
 
-function fe25519_unpack(o: Int64Array, n: Uint8Array): void {
+function fe25519_unpack(o: Int64Array, n: Uint8Array):
+    void {
     for (let i = 0; i < 16; ++i) {
         o[i] = (n[2 * i] as i64) + (n[2 * i + 1] as i64 << 8);
     }
     o[15] &= 0x7fff;
 }
 
-function fe25519_add(o: Int64Array, a: Int64Array, b: Int64Array): void {
+@inline function fe25519_add(o: Int64Array, a: Int64Array, b: Int64Array):
+    void {
     for (let i = 0; i < 16; ++i) {
         o[i] = (a[i] + b[i]);
     }
 }
 
-function fe25519_sub(o: Int64Array, a: Int64Array, b: Int64Array): void {
+@inline function fe25519_sub(o: Int64Array, a: Int64Array, b: Int64Array):
+    void {
     for (let i = 0; i < 16; ++i) {
         o[i] = a[i] - b[i];
     }
 }
 
-function fe25519_mul(o: Int64Array, a: Int64Array, b: Int64Array): void {
+function fe25519_mul(o: Int64Array, a: Int64Array, b: Int64Array):
+    void {
     let t = new Int64Array(31);
 
     for (let i = 0; i < 16; ++i) {
@@ -473,11 +486,13 @@ function fe25519_mul(o: Int64Array, a: Int64Array, b: Int64Array): void {
     fe25519_car(o);
 }
 
-function fe25519_sq(o: Int64Array, a: Int64Array): void {
+function fe25519_sq(o: Int64Array, a: Int64Array):
+    void {
     fe25519_mul(o, a, a);
 }
 
-function fe25519_inv(o: Int64Array, i: Int64Array): void {
+function fe25519_inv(o: Int64Array, i: Int64Array):
+    void {
     let c = fe25519n();
 
     for (let a = 0; a < 16; ++a) {
@@ -494,7 +509,8 @@ function fe25519_inv(o: Int64Array, i: Int64Array): void {
     }
 }
 
-function fe25519_pow2523(o: Int64Array, i: Int64Array): void {
+function fe25519_pow2523(o: Int64Array, i: Int64Array):
+    void {
     let c = fe25519n();
 
     for (let a = 0; a < 16; ++a) {
@@ -579,6 +595,14 @@ function ge25519n():
     let e: Int64Array[] = [fe25519n(), fe25519n(), fe25519n(), fe25519n()];
 
     return e;
+}
+
+@inline function ge_copy(r: Int64Array[], a: Int64Array[]):
+    void {
+    fe25519_copy(r[0], a[0]);
+    fe25519_copy(r[1], a[1]);
+    fe25519_copy(r[2], a[2]);
+    fe25519_copy(r[3], a[3]);
 }
 
 function add(p: Int64Array[], q: Int64Array[]):
@@ -666,10 +690,7 @@ function scalarmult_base(p: Int64Array[], s: Uint8Array):
         q[1] = fe25519(precomp_base[i][1]);
         q[2] = fe25519(precomp_base[i][2]);
         q[3] = fe25519(precomp_base[i][3]);
-        fe25519_copy(t[0], p[0]);
-        fe25519_copy(t[1], p[1]);
-        fe25519_copy(t[2], p[2]);
-        fe25519_copy(t[3], p[3]);
+        ge_copy(t, p);
         add(t, q);
         cmov(p, t, b);
         add(q, q);

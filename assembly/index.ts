@@ -376,18 +376,6 @@ function fe25519_car(o: Int64Array):
     }
 }
 
-function fe25519_cswap(p: Int64Array, q: Int64Array, b: i64):
-    void {
-    let t: i64;
-    let c: i64 = ~(b - 1);
-
-    for (let i = 0; i < 16; ++i) {
-        t = c & (p[i] ^ q[i]);
-        p[i] ^= t;
-        q[i] ^= t;
-    }
-}
-
 function fe25519_cmov(p: Int64Array, q: Int64Array, b: i64):
     void {
     let c: i64 = ~(b - 1);
@@ -416,7 +404,7 @@ function fe25519_pack(o: Uint8Array, n: Int64Array):
         m[15] = t[15] - 0x7fff - ((m[14] >> 16) & 1);
         b = (m[15] >> 16) & 1;
         m[14] &= 0xffff;
-        fe25519_cswap(t, m, 1 - b);
+        fe25519_cmov(t, m, 1 - b);
     }
     for (let i = 0; i < 16; ++i) {
         let ti = t[i] as u32;
@@ -620,13 +608,6 @@ function add(p: Int64Array[], q: Int64Array[]):
     fe25519_mul(p[3], e, h);
 }
 
-@inline function cswap(p: Int64Array[], q: Int64Array[], b: u8):
-    void {
-    for (let i = 0; i < 4; ++i) {
-        fe25519_cswap(p[i], q[i], b);
-    }
-}
-
 @inline function cmov(p: Int64Array[], q: Int64Array[], b: u8):
     void {
     for (let i = 0; i < 4; ++i) {
@@ -646,18 +627,20 @@ function pack(r: Uint8Array, p: Int64Array[]):
 
 function scalarmult(p: Int64Array[], q: Int64Array[], s: Uint8Array):
     void {
+    let t: Int64Array[] = ge25519n();
     let b: u8;
 
     fe25519_copy(p[0], fe25519_0);
     fe25519_copy(p[1], fe25519_1);
     fe25519_copy(p[2], fe25519_1);
     fe25519_copy(p[3], fe25519_0);
-    for (let i = 255; i >= 0; --i) {
-        b = (s[(i >> 3)] >> (i as u8 & 7)) & 1;
-        cswap(p, q, b);
-        add(q, p);
-        add(p, p);
-        cswap(p, q, b);
+
+    for (let i: isize = 0; i <= 255; ++i) {
+        b = (s[(i >>> 3)] >>> (i as u8 & 7)) & 1;
+        ge_copy(t, p);
+        add(t, q);
+        cmov(p, t, b);
+        add(q, q);
     }
 }
 
@@ -681,7 +664,6 @@ function scalarmult_base(p: Int64Array[], s: Uint8Array):
         ge_copy(t, p);
         add(t, q);
         cmov(p, t, b);
-        add(q, q);
     }
 }
 

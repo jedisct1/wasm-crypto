@@ -136,8 +136,6 @@ function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
     return n;
 }
 
-let iv: Uint8Array = null;
-
 const iv_: u8[] = [
     0x6a, 0x09, 0xe6, 0x67, 0xf3, 0xbc, 0xc9, 0x08, 0xbb, 0x67, 0xae, 0x85, 0x84,
     0xca, 0xa7, 0x3b, 0x3c, 0x6e, 0xf3, 0x72, 0xfe, 0x94, 0xf8, 0x2b, 0xa5, 0x4f,
@@ -145,6 +143,11 @@ const iv_: u8[] = [
     0xd1, 0x9b, 0x05, 0x68, 0x8c, 0x2b, 0x3e, 0x6c, 0x1f, 0x1f, 0x83, 0xd9, 0xab,
     0xfb, 0x41, 0xbd, 0x6b, 0x5b, 0xe0, 0xcd, 0x19, 0x13, 0x7e, 0x21, 0x79,
 ];
+
+let iv: Uint8Array = new Uint8Array(64);
+for (let i = 0; i < 64; ++i) {
+    iv[i] = iv_[i];
+}
 
 function _hash_init(): Uint8Array {
     let st = new Uint8Array(64 + 128 + 8 * 2);
@@ -260,14 +263,98 @@ function fe25519(init: i64[]):
     return r;
 }
 
-let fe25519_0: Int64Array = null;
-let fe25519_1: Int64Array = null;
-
-let D: Int64Array = null;
-let D2: Int64Array = null;
-let X: Int64Array = null;
-let Y: Int64Array = null;
-let I: Int64Array = null;
+let fe25519_0: Int64Array = fe25519n();
+let fe25519_1: Int64Array = fe25519([1]);
+let D: Int64Array = fe25519([
+    0x78a3,
+    0x1359,
+    0x4dca,
+    0x75eb,
+    0xd8ab,
+    0x4141,
+    0x0a4d,
+    0x0070,
+    0xe898,
+    0x7779,
+    0x4079,
+    0x8cc7,
+    0xfe73,
+    0x2b6f,
+    0x6cee,
+    0x5203,
+]);
+let D2: Int64Array = fe25519([
+    0xf159,
+    0x26b2,
+    0x9b94,
+    0xebd6,
+    0xb156,
+    0x8283,
+    0x149a,
+    0x00e0,
+    0xd130,
+    0xeef3,
+    0x80f2,
+    0x198e,
+    0xfce7,
+    0x56df,
+    0xd9dc,
+    0x2406,
+]);
+let X: Int64Array = fe25519([
+    0xd51a,
+    0x8f25,
+    0x2d60,
+    0xc956,
+    0xa7b2,
+    0x9525,
+    0xc760,
+    0x692c,
+    0xdc5c,
+    0xfdd6,
+    0xe231,
+    0xc0a4,
+    0x53fe,
+    0xcd6e,
+    0x36d3,
+    0x2169,
+]);
+let Y: Int64Array = fe25519([
+    0x6658,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+    0x6666,
+]);
+let I: Int64Array = fe25519([
+    0xa0b0,
+    0x4a0e,
+    0x1b27,
+    0xc4ee,
+    0xe478,
+    0xad2f,
+    0x1806,
+    0x2f43,
+    0xd7a7,
+    0x3dfb,
+    0x0099,
+    0x2b4d,
+    0xdf0b,
+    0x4fc1,
+    0x2480,
+    0x2b83,
+]);
 
 @inline
 function fe25519_copy(r: Int64Array, a: Int64Array):
@@ -416,7 +503,24 @@ function fe25519_pow2523(o: Int64Array, i: Int64Array):
     fe25519_copy(o, c);
 }
 
-let _L: Int64Array = null;
+let _L: Int64Array = new Int64Array(32);
+_L[0] = 237;
+_L[1] = 211;
+_L[2] = 245;
+_L[3] = 92;
+_L[4] = 26;
+_L[5] = 99;
+_L[6] = 18;
+_L[7] = 88;
+_L[8] = 214;
+_L[9] = 156;
+_L[10] = 247;
+_L[11] = 162;
+_L[12] = 222;
+_L[13] = 249;
+_L[14] = 222;
+_L[15] = 20;
+_L[31] = 16;
 
 function fe25519_modL(r: Uint8Array, x: Int64Array): void {
     let carry: i64;
@@ -635,7 +739,10 @@ function is_canonical(s: Uint8Array):
 
 // Ed25519
 
-let B: Uint8Array = null;
+let B = new Uint8Array(32);
+for (let i = 0; i < 32; ++i) {
+    B[i] = 0x66;
+}
 
 function _sign_synthetic_r_hv(
     hs: Uint8Array, r: isize, Z: Uint8Array, sk: Uint8Array): isize {
@@ -938,128 +1045,4 @@ export function hash(m: Uint8Array): Uint8Array {
  */
 export function hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
     return _hmac(m, k);
-}
-
-/**
- * Initialize the library - Required before calling any other function.
- */
-export function init(): void {
-    iv = new Uint8Array(64);
-    for (let i = 0; i < 64; ++i) {
-        iv[i] = iv_[i];
-    }
-    fe25519_0 = fe25519n();
-    fe25519_1 = fe25519([1]);
-    D = fe25519([
-        0x78a3,
-        0x1359,
-        0x4dca,
-        0x75eb,
-        0xd8ab,
-        0x4141,
-        0x0a4d,
-        0x0070,
-        0xe898,
-        0x7779,
-        0x4079,
-        0x8cc7,
-        0xfe73,
-        0x2b6f,
-        0x6cee,
-        0x5203,
-    ]);
-    D2 = fe25519([
-        0xf159,
-        0x26b2,
-        0x9b94,
-        0xebd6,
-        0xb156,
-        0x8283,
-        0x149a,
-        0x00e0,
-        0xd130,
-        0xeef3,
-        0x80f2,
-        0x198e,
-        0xfce7,
-        0x56df,
-        0xd9dc,
-        0x2406,
-    ]);
-    X = fe25519([
-        0xd51a,
-        0x8f25,
-        0x2d60,
-        0xc956,
-        0xa7b2,
-        0x9525,
-        0xc760,
-        0x692c,
-        0xdc5c,
-        0xfdd6,
-        0xe231,
-        0xc0a4,
-        0x53fe,
-        0xcd6e,
-        0x36d3,
-        0x2169,
-    ]);
-    Y = fe25519([
-        0x6658,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-        0x6666,
-    ]);
-    I = fe25519([
-        0xa0b0,
-        0x4a0e,
-        0x1b27,
-        0xc4ee,
-        0xe478,
-        0xad2f,
-        0x1806,
-        0x2f43,
-        0xd7a7,
-        0x3dfb,
-        0x0099,
-        0x2b4d,
-        0xdf0b,
-        0x4fc1,
-        0x2480,
-        0x2b83,
-    ]);
-    _L = new Int64Array(32);
-    _L[0] = 237;
-    _L[1] = 211;
-    _L[2] = 245;
-    _L[3] = 92;
-    _L[4] = 26;
-    _L[5] = 99;
-    _L[6] = 18;
-    _L[7] = 88;
-    _L[8] = 214;
-    _L[9] = 156;
-    _L[10] = 247;
-    _L[11] = 162;
-    _L[12] = 222;
-    _L[13] = 249;
-    _L[14] = 222;
-    _L[15] = 20;
-    _L[31] = 16;
-    B = new Uint8Array(32);
-    for (let i = 0; i < 32; ++i) {
-        B[i] = 0x66;
-    }
 }

@@ -669,19 +669,19 @@ function scalarmult_base(p: Int64Array[], s: Uint8Array):
 
 // EdDSA
 
-function _sign_keypair_from_seed(sk: Uint8Array):
+function _sign_keypair_from_seed(kp: Uint8Array):
     void {
     let pk = new Uint8Array(32);
     let d = new Uint8Array(64);
     let p = ge25519n();
 
-    _hash(d, sk, 32);
+    _hash(d, kp, 32);
     d[0] &= 248;
     d[31] = (d[31] & 127) | 64;
     scalarmult_base(p, d);
     pack(pk, p);
     for (let i = 0; i < 32; ++i) {
-        sk[i + 32] = pk[i];
+        kp[i + 32] = pk[i];
     }
 }
 
@@ -769,7 +769,7 @@ function _sign_synthetic_r_hv(
 }
 
 function _sign_detached(
-    sig: Uint8Array, m: Uint8Array, sk: Uint8Array, Z: Uint8Array): void {
+    sig: Uint8Array, m: Uint8Array, kp: Uint8Array, Z: Uint8Array): void {
     let R = ge25519n();
     let az = new Uint8Array(64);
     let nonce = new Uint8Array(64);
@@ -779,7 +779,7 @@ function _sign_detached(
     let hs = _hash_init();
     let r: isize = 0;
 
-    _hash(az, sk, 32);
+    _hash(az, kp, 32);
     if (Z.length > 0) {
         r = _sign_synthetic_r_hv(hs, r, Z, az);
     } else {
@@ -787,7 +787,7 @@ function _sign_detached(
     }
     r = _hash_update(hs, m, mlen, r);
     _hash_final(hs, nonce, 32 + mlen, r);
-    set_u8(sig, sk.subarray(32), 32);
+    set_u8(sig, kp.subarray(32), 32);
 
     fe25519_reduce(nonce);
     scalarmult_base(R, nonce);
@@ -844,42 +844,56 @@ function _sign_verify_detached(
 /**
  * Signature size, in bytes
  */
+@global
 export const sign_BYTES: isize = 64;
 
 /**
  * Public key size, in bytes
  */
+@global
 export const sign_PUBLICKEYBYTES: isize = 32;
 
 /**
  * Secret key size, in bytes
  */
-export const sign_SECRETKEYBYTES: isize = 64;
+@global
+export const sign_SECRETKEYBYTES: isize = 32;
+
+/**
+ * Key pair size, in bytes
+ */
+@global
+export const sign_KEYPAIRBYTES: isize = 64;
 
 /**
  * Seed size, in bytes
  */
+@global
 export const sign_SEEDBYTES: isize = 32;
 
 /**
  * Recommended random bytes size, in bytes
  */
+@global
 export const sign_RANDBYTES: isize = 32;
 
 /**
  * Hash function output size, in bytes
  */
+@global
 export const hash_BYTES: isize = 64;
 
 /**
  * HMAC output size, in bytes
  */
+@global
 export const hmac_BYTES: isize = 64;
 
 /**
  * Fill an array with zeros
  * @param x Array to clear
  */
+@global
 export function memzero(x: Uint8Array): void {
     for (let i = 0, j = x.length; i < j; ++i) {
         x[i] = 0;
@@ -892,6 +906,7 @@ export function memzero(x: Uint8Array): void {
  * @param y Second array
  * @returns true if `x === y`
  */
+@global
 export function equals(x: Uint8Array, y: Uint8Array): bool {
     let len = x.length;
     let d: u8 = 0;
@@ -908,14 +923,15 @@ export function equals(x: Uint8Array, y: Uint8Array): bool {
 /**
  * Sign a message and returns its signature.
  * @param m Message to sign
- * @param sk Secret key (`sign_SECRETKEYBYTES` long)
+ * @param kp Key pair (`sign_KEYPAIRBYTES` long)
  * @param Z Random bytes. This can be an empty array to produce deterministic
  *     signatures
  * @returns Signature
  */
-export function sign(m: Uint8Array, sk: Uint8Array, Z: Uint8Array): Uint8Array {
+@global
+export function sign(m: Uint8Array, kp: Uint8Array, Z: Uint8Array): Uint8Array {
     let sig = new Uint8Array(sign_BYTES);
-    _sign_detached(sig, m, sk, Z);
+    _sign_detached(sig, m, kp, Z);
 
     return sig;
 }
@@ -927,6 +943,7 @@ export function sign(m: Uint8Array, sk: Uint8Array, Z: Uint8Array): Uint8Array {
  * @param pk Public key
  * @returns `true` on success
  */
+@global
 export function sign_verify(
     m: Uint8Array, sig: Uint8Array, pk: Uint8Array): bool {
     if (sig.length !== sign_BYTES) {
@@ -943,17 +960,18 @@ export function sign_verify(
  * @param seed Seed (`sign_SEEDBYTES` long)
  * @returns Key pair
  */
+@global
 export function sign_keypair_from_seed(seed: Uint8Array): Uint8Array {
     if (seed.length !== sign_SEEDBYTES) {
         throw new Error("bad seed size");
     }
-    let sk = new Uint8Array(sign_SECRETKEYBYTES);
+    let kp = new Uint8Array(sign_KEYPAIRBYTES);
     for (let i: isize = 0; i < 32; i++) {
-        sk[i] = seed[i];
+        kp[i] = seed[i];
     }
-    _sign_keypair_from_seed(sk);
+    _sign_keypair_from_seed(kp);
 
-    return sk;
+    return kp;
 }
 
 /**
@@ -961,6 +979,7 @@ export function sign_keypair_from_seed(seed: Uint8Array): Uint8Array {
  * @param kp Key pair
  * @returns Public key
  */
+@global
 export function sign_public_key(kp: Uint8Array): Uint8Array {
     const len = sign_PUBLICKEYBYTES;
     let pk = new Uint8Array(len);
@@ -976,6 +995,7 @@ export function sign_public_key(kp: Uint8Array): Uint8Array {
  * @param kp Key pair
  * @returns Secret key
  */
+@global
 export function sign_secret_key(kp: Uint8Array): Uint8Array {
     const len = sign_SECRETKEYBYTES;
     let sk = new Uint8Array(len);
@@ -990,6 +1010,7 @@ export function sign_secret_key(kp: Uint8Array): Uint8Array {
  * Initialize a multipart hash computation
  * @returns A hash function state
  */
+@global
 export function hash_init(): Uint8Array {
     return _hash_init();
 }
@@ -999,6 +1020,7 @@ export function hash_init(): Uint8Array {
  * @param st Hash function state
  * @param m (partial) message
  */
+@global
 export function hash_update(st: Uint8Array, m: Uint8Array): void {
     let r = load64(st, 64 + 128);
     let t = load64(st, 64 + 128 + 8);
@@ -1015,6 +1037,7 @@ export function hash_update(st: Uint8Array, m: Uint8Array): void {
  * @param st Hash function state
  * @returns Hash
  */
+@global
 export function hash_final(st: Uint8Array): Uint8Array {
     let h = new Uint8Array(hash_BYTES);
     let r = load64(st, 64 + 128);
@@ -1030,6 +1053,7 @@ export function hash_final(st: Uint8Array): Uint8Array {
  * @param m Message
  * @returns Hash
  */
+@global
 export function hash(m: Uint8Array): Uint8Array {
     let st = hash_init();
 
@@ -1043,6 +1067,7 @@ export function hash(m: Uint8Array): Uint8Array {
  * @param m Message
  * @param k Key
  */
+@global
 export function hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
     return _hmac(m, k);
 }

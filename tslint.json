@@ -9,7 +9,14 @@
         "variable-name": false,
         "one-variable-per-declaration": false,
         "prefer-const": false,
-        "max-classes-per-file": false
+        "max-classes-per-file": false,
+        "indent": [true, 4],
+        "whitespace": [true,
+            "check-branch",
+            "check-operator",
+            "check-separator",
+            "check-typecast"
+        ]
     },
     "rulesDirectory": []
 }

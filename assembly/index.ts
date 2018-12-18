@@ -337,13 +337,192 @@ function _hmac(m : Uint8Array, k : Uint8Array) : Uint8Array {
 
 // helpers
 
-function _verify32(x : Uint8Array, y : Uint8Array) : bool {
+function verify32(x : Uint8Array, y : Uint8Array) : bool {
     let d: u8 = 0;
 
     for (let i = 0; i < 32; ++i) {
         d |= x[i] ^ y[i];
     }
     return d === 0;
+}
+
+function allZeros(x : Uint8Array) : bool {
+    let len = x.length;
+    let c: u8 = 0;
+    for (let i = 0; i < len; i++) {
+        c |= x[i];
+    }
+    return c === 0;
+}
+
+// mod(2^252 + 27742317777372353535851937790883648495) field arithmetic
+
+let _L : Int64Array = new Int64Array(32);
+_L[0] = 237;
+_L[1] = 211;
+_L[2] = 245;
+_L[3] = 92;
+_L[4] = 26;
+_L[5] = 99;
+_L[6] = 18;
+_L[7] = 88;
+_L[8] = 214;
+_L[9] = 156;
+_L[10] = 247;
+_L[11] = 162;
+_L[12] = 222;
+_L[13] = 249;
+_L[14] = 222;
+_L[15] = 20;
+_L[31] = 16;
+
+@ inline
+function scn() : Int64Array {return new Int64Array(64);}
+
+function scModL(r : Uint8Array, x : Int64Array) : void {
+    let carry: i64;
+
+    for (let i = 63; i >= 32; --i) {
+        carry = 0;
+        let k = i - 12;
+        for (let j = i - 32; j < k; ++j) {
+            x[j] += carry - 16 * x[i] * _L[j - (i - 32)];
+            carry = (x[j] + 128) >> 8;
+            x[j] -= carry * 256;
+        }
+        x[k] += carry;
+        x[i] = 0;
+    }
+    carry = 0;
+    for (let j = 0; j < 32; ++j) {
+        x[j] += carry - (x[31] >> 4) * _L[j];
+        carry = x[j] >> 8;
+        x[j] &= 255;
+    }
+    for (let j = 0; j < 32; ++j) {
+        x[j] -= carry * _L[j];
+    }
+    for (let i = 0; i < 32; ++i) {
+        x[i + 1] += x[i] >> 8;
+        r[i] = x[i]as u8;
+    }
+}
+
+function scReduce(r : Uint8Array) : void {
+    let x = new Int64Array(64);
+
+    for (let i = 0; i < 64; ++i) {
+        x[i] = r[i];
+    }
+    for (let i = 0; i < 64; ++i) {
+        r[i] = 0;
+    }
+    scModL(r, x);
+}
+
+function scCarry(a : Int64Array) : void {
+    let carry: i64 = 0;
+    for (let i = 0; i < 64; i++) {
+        let c = a[i] + carry;
+        a[i] = c & 0xff;
+        carry = (c >>> 8)
+    }
+    if (carry > 0) {
+        throw 'overflow';
+    }
+}
+
+function scMult(o : Int64Array, a : Int64Array, b : Int64Array) : void {
+    let r = new Uint8Array(32);
+    let t = new Int64Array(64);
+    for (let i = 0; i < 64; i++) {
+        t[i] = 0;
+    }
+    for (let i = 0; i < 32; i++) {
+        for (let j = 0; j < 32; j++) {
+            t[i + j] += a[i] * b[j];
+        }
+    }
+    scCarry(t);
+    scModL(r, t);
+    for (let i = 0; i < 32; i++) {
+        o[i] = r[i];
+    }
+    for (let i = 32; i < 64; i++) {
+        o[i] = 0;
+    }
+}
+
+function scSq(o : Int64Array, a : Int64Array) : void {
+    scMult(o, a, a);
+}
+
+function scSqMult(y : Int64Array, squarings : isize, x : Int64Array) : void {
+    for(let i = 0; i < squarings; i++) {
+        scSq(y, y);
+    }
+    scMult(y, y, x);
+}
+
+function scInverse(s : Uint8Array) : Uint8Array {
+    let res = new Uint8Array(32);
+    let _1 = scn();
+    for (let i = 0; i < 32; i++) {
+        _1[i] = s[i]
+    };
+    let _10 = scn(),
+        _100 = scn(),
+        _11 = scn(),
+        _101 = scn(),
+        _111 = scn(),
+        _1001 = scn(),
+        _1011 = scn(),
+        _1111 = scn(),
+        y = scn();
+
+    scSq(_10, _1);
+    scSq(_100, _10);
+    scMult(_11, _10, _1);
+    scMult(_101, _10, _11);
+    scMult(_111, _10, _101);
+    scMult(_1001, _10, _111);
+    scMult(_1011, _10, _1001);
+    scMult(_1111, _100, _1011);
+    scMult(y, _1111, _1);
+
+    scSqMult(y, 123 + 3, _101);
+    scSqMult(y, 2 + 2, _11);
+    scSqMult(y, 1 + 4, _1111);
+    scSqMult(y, 1 + 4, _1111);
+    scSqMult(y, 4, _1001);
+    scSqMult(y, 2, _11);
+    scSqMult(y, 1 + 4, _1111);
+    scSqMult(y, 1 + 3, _101);
+    scSqMult(y, 3 + 3, _101);
+    scSqMult(y, 3, _111);
+    scSqMult(y, 1 + 4, _1111);
+    scSqMult(y, 2 + 3, _111);
+    scSqMult(y, 2 + 2, _11);
+    scSqMult(y, 1 + 4, _1011);
+    scSqMult(y, 2 + 4, _1011);
+    scSqMult(y, 6 + 4, _1001);
+    scSqMult(y, 2 + 2, _11);
+    scSqMult(y, 3 + 2, _11);
+    scSqMult(y, 3 + 2, _11);
+    scSqMult(y, 1 + 4, _1001);
+    scSqMult(y, 1 + 3, _111);
+    scSqMult(y, 2 + 4, _1111);
+    scSqMult(y, 1 + 4, _1011);
+    scSqMult(y, 3, _101);
+    scSqMult(y, 2 + 4, _1111);
+    scSqMult(y, 3, _101);
+    scSqMult(y, 1 + 2, _11);
+
+    for (let i = 0; i < 32; ++i) {
+        y[i + 1] += y[i] >> 8;
+        res[i] = y[i]as u8;
+    }
+    return res;
 }
 
 // mod(2^255-19) field arithmetic - Doesn't use 51-bit limbs yet to keep the
@@ -461,7 +640,7 @@ function fe25519Copy(r : Int64Array, a : Int64Array) : void {
     }
 }
 
-function fe25519Carry(o : Int64Array) : void {
+function fe25519Car(o : Int64Array) : void {
     let c: i64;
 
     for (let i = 0; i < 16; ++i) {
@@ -486,9 +665,9 @@ function fe25519Pack(o : Uint8Array, n : Int64Array) : void {
     let t = fe25519n();
 
     fe25519Copy(t, n);
-    fe25519Carry(t);
-    fe25519Carry(t);
-    fe25519Carry(t);
+    fe25519Car(t);
+    fe25519Car(t);
+    fe25519Car(t);
     for (let j = 0; j < 2; ++j) {
         m[0] = t[0] - 0xffed;
         for (let i = 1; i < 15; ++i) {
@@ -514,7 +693,7 @@ function fe25519Eq(a : Int64Array, b : Int64Array) : bool {
     fe25519Pack(c, a);
     fe25519Pack(d, b);
 
-    return _verify32(c, d);
+    return verify32(c, d);
 }
 
 function fe25519Par(a : Int64Array) : u8 {
@@ -543,7 +722,7 @@ function fe25519Unpack(o : Int64Array, n : Uint8Array) : void {
     }
 }
 
-function fe25519Mul(o : Int64Array, a : Int64Array, b : Int64Array) : void {
+function fe25519Mult(o : Int64Array, a : Int64Array, b : Int64Array) : void {
     let t = new Int64Array(31);
 
     for (let i = 0; i < 16; ++i) {
@@ -555,22 +734,22 @@ function fe25519Mul(o : Int64Array, a : Int64Array, b : Int64Array) : void {
         t[i] += 38 as i64 * t[i + 16];
     }
     fe25519Copy(o, t);
-    fe25519Carry(o);
-    fe25519Carry(o);
+    fe25519Car(o);
+    fe25519Car(o);
 }
 
 function fe25519Sq(o : Int64Array, a : Int64Array) : void {
-    fe25519Mul(o, a, a);
+    fe25519Mult(o, a, a);
 }
 
-function fe25519Inv(o : Int64Array, i : Int64Array) : void {
+function fe25519Inverse(o : Int64Array, i : Int64Array) : void {
     let c = fe25519n();
 
     fe25519Copy(c, i);
     for (let a = 253; a >= 0; --a) {
         fe25519Sq(c, c);
         if (a !== 2 && a !== 4) {
-            fe25519Mul(c, c, i);
+            fe25519Mult(c, c, i);
         }
     }
     fe25519Copy(o, c);
@@ -583,70 +762,10 @@ function fe25519Pow2523(o : Int64Array, i : Int64Array) : void {
     for (let a = 250; a >= 0; --a) {
         fe25519Sq(c, c);
         if (a !== 1) {
-            fe25519Mul(c, c, i);
+            fe25519Mult(c, c, i);
         }
     }
     fe25519Copy(o, c);
-}
-
-let _L : Int64Array = new Int64Array(32);
-_L[0] = 237;
-_L[1] = 211;
-_L[2] = 245;
-_L[3] = 92;
-_L[4] = 26;
-_L[5] = 99;
-_L[6] = 18;
-_L[7] = 88;
-_L[8] = 214;
-_L[9] = 156;
-_L[10] = 247;
-_L[11] = 162;
-_L[12] = 222;
-_L[13] = 249;
-_L[14] = 222;
-_L[15] = 20;
-_L[31] = 16;
-
-function fe25519ModL(r : Uint8Array, x : Int64Array) : void {
-    let carry: i64;
-
-    for (let i = 63; i >= 32; --i) {
-        carry = 0;
-        let k = i - 12;
-        for (let j = i - 32; j < k; ++j) {
-            x[j] += carry - 16 * x[i] * _L[j - (i - 32)];
-            carry = (x[j] + 128) >> 8;
-            x[j] -= carry * 256;
-        }
-        x[k] += carry;
-        x[i] = 0;
-    }
-    carry = 0;
-    for (let j = 0; j < 32; ++j) {
-        x[j] += carry - (x[31] >> 4) * _L[j];
-        carry = x[j] >> 8;
-        x[j] &= 255;
-    }
-    for (let j = 0; j < 32; ++j) {
-        x[j] -= carry * _L[j];
-    }
-    for (let i = 0; i < 32; ++i) {
-        x[i + 1] += x[i] >> 8;
-        r[i] = x[i]as u8;
-    }
-}
-
-function fe25519Reduce(r : Uint8Array) : void {
-    let x = new Int64Array(64);
-
-    for (let i = 0; i < 64; ++i) {
-        x[i] = r[i];
-    }
-    for (let i = 0; i < 64; ++i) {
-        r[i] = 0;
-    }
-    fe25519ModL(r, x);
 }
 
 // Ed25519 group arithmetic
@@ -678,23 +797,23 @@ function add(p : Int64Array[], q : Int64Array[]) : void {
 
     fe25519Sub(a, p[1], p[0]);
     fe25519Sub(t, q[1], q[0]);
-    fe25519Mul(a, a, t);
+    fe25519Mult(a, a, t);
     fe25519Add(b, p[0], p[1]);
     fe25519Add(t, q[0], q[1]);
-    fe25519Mul(b, b, t);
-    fe25519Mul(c, p[3], q[3]);
-    fe25519Mul(c, c, D2);
-    fe25519Mul(d, p[2], q[2]);
+    fe25519Mult(b, b, t);
+    fe25519Mult(c, p[3], q[3]);
+    fe25519Mult(c, c, D2);
+    fe25519Mult(d, p[2], q[2]);
     fe25519Add(d, d, d);
     fe25519Sub(e, b, a);
     fe25519Sub(f, d, c);
     fe25519Add(g, d, c);
     fe25519Add(h, b, a);
 
-    fe25519Mul(p[0], e, f);
-    fe25519Mul(p[1], h, g);
-    fe25519Mul(p[2], g, f);
-    fe25519Mul(p[3], e, h);
+    fe25519Mult(p[0], e, f);
+    fe25519Mult(p[1], h, g);
+    fe25519Mult(p[2], g, f);
+    fe25519Mult(p[3], e, h);
 }
 
 @ inline function cmov(p : Int64Array[], q : Int64Array[], b : u8) : void {
@@ -707,9 +826,9 @@ function pack(r : Uint8Array, p : Int64Array[]) : void {
         let tx = fe25519n(),
         ty = fe25519n(),
         zi = fe25519n();
-    fe25519Inv(zi, p[2]);
-    fe25519Mul(tx, p[0], zi);
-    fe25519Mul(ty, p[1], zi);
+    fe25519Inverse(zi, p[2]);
+    fe25519Mult(tx, p[0], zi);
+    fe25519Mult(ty, p[1], zi);
     fe25519Pack(r, ty);
     r[31] ^= fe25519Par(tx) << 7;
 }
@@ -783,33 +902,33 @@ function unpackneg(r : Int64Array[], p : Uint8Array) : bool {
     fe25519Copy(r[2], fe25519_1);
     fe25519Unpack(r[1], p);
     fe25519Sq(num, r[1]);
-    fe25519Mul(den, num, D);
+    fe25519Mult(den, num, D);
     fe25519Sub(num, num, r[2]);
     fe25519Add(den, r[2], den);
     fe25519Sq(den2, den);
     fe25519Sq(den4, den2);
-    fe25519Mul(den6, den4, den2);
-    fe25519Mul(t, den6, num);
-    fe25519Mul(t, t, den);
+    fe25519Mult(den6, den4, den2);
+    fe25519Mult(t, den6, num);
+    fe25519Mult(t, t, den);
     fe25519Pow2523(t, t);
-    fe25519Mul(t, t, num);
-    fe25519Mul(t, t, den);
-    fe25519Mul(t, t, den);
-    fe25519Mul(r[0], t, den);
+    fe25519Mult(t, t, num);
+    fe25519Mult(t, t, den);
+    fe25519Mult(t, t, den);
+    fe25519Mult(r[0], t, den);
     fe25519Sq(chk, r[0]);
-    fe25519Mul(chk, chk, den);
+    fe25519Mult(chk, chk, den);
     if (!fe25519Eq(chk, num)) {
-        fe25519Mul(r[0], r[0], I);
+        fe25519Mult(r[0], r[0], I);
     }
     fe25519Sq(chk, r[0]);
-    fe25519Mul(chk, chk, den);
+    fe25519Mult(chk, chk, den);
     if (!fe25519Eq(chk, num)) {
         return false;
     }
     if (fe25519Par(r[0]) === (p[31] >> 7)) {
         fe25519Sub(r[0], fe25519_0, r[0]);
     }
-    fe25519Mul(r[3], r[0], r[1]);
+    fe25519Mult(r[3], r[0], r[1]);
 
     return true;
 }
@@ -817,6 +936,9 @@ function unpackneg(r : Int64Array[], p : Uint8Array) : bool {
 function isCanonical(s : Uint8Array) : bool {
     let c: u32 = (s[31] & 0x7f) ^ 0x7f;
 
+    if (allZeros(s)) {
+        return false;
+    }
     for (let i = 30; i > 0; --i) {
         c |= s[i] ^ 0xff;
     }
@@ -876,7 +998,7 @@ function _signDetached(sig : Uint8Array, m : Uint8Array, kp : Uint8Array, Z : Ui
     _hashFinal(hs, nonce, 32 + mlen, r);
     setU8(sig, kp.subarray(32), 32);
 
-    fe25519Reduce(nonce);
+    scReduce(nonce);
     scalarmultBase(R, nonce);
     pack(sig, R);
 
@@ -884,7 +1006,7 @@ function _signDetached(sig : Uint8Array, m : Uint8Array, kp : Uint8Array, Z : Ui
     r = _hashUpdate(hs, sig, 64, 0);
     r = _hashUpdate(hs, m, mlen, r);
     _hashFinal(hs, hram, 64 + mlen, r);
-    fe25519Reduce(hram);
+    scReduce(hram);
     az[0] &= 248;
     az[31] = (az[31] & 127) | 64;
     for (let i = 0; i < 32; ++i) {
@@ -895,7 +1017,7 @@ function _signDetached(sig : Uint8Array, m : Uint8Array, kp : Uint8Array, Z : Ui
             x[i + j] += (hram[i]as i64) * (az[j]as i64);
         }
     }
-    fe25519ModL(sig.subarray(32), x);
+    scModL(sig.subarray(32), x);
 }
 
 function _signVerifyDetached(sig : Uint8Array, m : Uint8Array, pk : Uint8Array) : bool {
@@ -915,14 +1037,14 @@ function _signVerifyDetached(sig : Uint8Array, m : Uint8Array, pk : Uint8Array) 
     r = _hashUpdate(hs, pk, 32, r);
     r = _hashUpdate(hs, m, m.length, r);
     _hashFinal(hs, h, 32 + 32 + m.length, r);
-    fe25519Reduce(h);
+    scReduce(h);
 
     scalarmult(R, A, h);
     scalarmultBase(A, sig.subarray(32));
     add(R, A);
     pack(rcheck, R);
 
-    return _verify32(rcheck, sig.subarray(0, 32));
+    return verify32(rcheck, sig.subarray(0, 32));
 }
 
 // Exported API
@@ -966,6 +1088,16 @@ function _signVerifyDetached(sig : Uint8Array, m : Uint8Array, pk : Uint8Array) 
  * HMAC output size, in bytes
  */
 @global export const HMAC_BYTES : isize = 64;
+
+/**
+ * Size of an encoded scalar, in bytes
+ */
+@global export const FA_SCALARBYTES : isize = 32;
+
+/**
+ * Size of an encoded point, in bytes
+ */
+@global export const FA_POINTBYTES : isize = 32;
 
 /**
  * Fill an array with zeros
@@ -1135,4 +1267,101 @@ export function hashInit() : Uint8Array {return _hashInit();}
  */
 @global export function hmac(m : Uint8Array, k : Uint8Array) : Uint8Array {
     return _hmac(m, k);
+}
+
+/**
+ * Compute the multiplicative inverse of a scalar
+ * @param s Scalar
+ */
+@global export function faScalarInverse(s : Uint8Array) : Uint8Array {return scInverse(s);}
+
+/**
+ * Compute s mod L
+ * @param s Scalar
+ */
+@global export function faScalarReduce(s : Uint8Array) : Uint8Array {
+    let r = new Uint8Array(32);
+    let s_ = new Uint8Array(64);
+    setU8(s_, s, 0);
+    scReduce(s_);
+    for (let i = 0; i < 32; i++) {
+        r[i] = s_[i];
+    }
+    return r;
+}
+
+/**
+ * Multiply a point `q` by a scalar `s`
+ * @param q Point
+ * @param s Scalar
+ */
+@global export function faScalarMult(q : Uint8Array, s : Uint8Array) : Uint8Array {
+    let p = new Uint8Array(32);
+    let p_ = ge25519n();
+    let q_ = ge25519n();
+    if (!unpackneg(q_, q)) {
+        return null;
+    }
+    q[31] ^= 0x80;
+    scalarmult(p_, q_, s);
+    pack(p, p_);
+    if (allZeros(p)) {
+        return null;
+    }
+    return p;
+}
+
+/**
+ * Multiply a point `q` by a scalar `s` after clamping `s`
+ * @param q Point
+ * @param s Scalar
+ */
+@global export function faScalarMultClamp(q : Uint8Array, s : Uint8Array) : Uint8Array {
+    let s_ = new Uint8Array(32);
+    setU8(s_, s, 0);
+    s_[0] &= 248;
+    s_[31] = (s_[31] & 127) | 64;
+
+    return faScalarMult(q, s);
+}
+
+/**
+ * Multiply the base point by a scalar `s`
+ * @param s Scalar
+ */
+@global export function faScalarBase(s : Uint8Array) : Uint8Array {
+    let c: Int64Array = 0;
+    let p = new Uint8Array(32);
+    let p_ = ge25519n();
+    scalarmultBase(p_, s);
+    pack(p, p_);
+    if (allZeros(p)) {
+        return null;
+    }
+    return p;
+}
+
+/**
+ * Verify that the point is on the main subgroup
+ * @param q Point
+ */
+@global export function faPointValidate(q : Uint8Array) : bool {
+    let l = new Uint8Array(32);
+    let p_ = ge25519n();
+    let q_ = ge25519n();
+
+    for (let i = 0; i < 32; i++) {
+        l[i] = _L[i]as u8;
+    }
+    if (!unpackneg(q_, q)) {
+        return false;
+    }
+    scalarmult(p_, q_, l);
+
+    let c: i64 = 0;
+    let x = p_[0];
+    for (let i = 0; i < 16; i++) {
+        c |= x[i];
+    }
+    return c === 0;
 }

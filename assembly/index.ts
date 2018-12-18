@@ -975,7 +975,7 @@ export function memzero(x: Uint8Array): void {
  * @param pk Public key
  * @returns `true` on success
  */
-@global export function signVerify(m: Uint8Array, sig: Uint8Array, pk: Uint8Array): bool {
+@global export function signVerify(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bool {
     if (sig.length !== SIGN_BYTES) {
         throw new Error('bad signature size');
     }
@@ -1038,7 +1038,9 @@ export function memzero(x: Uint8Array): void {
  * @returns A hash function state
  */
 @global
-export function hashInit(): Uint8Array { return _hashInit(); }
+export function hashInit(): Uint8Array {
+    return _hashInit();
+}
 
 /**
  * Absorb data to be hashed
@@ -1097,7 +1099,9 @@ export function hashInit(): Uint8Array { return _hashInit(); }
  * Compute the multiplicative inverse of a scalar
  * @param s Scalar
  */
-@global export function faScalarInverse(s: Uint8Array): Uint8Array { return scInverse(s); }
+@global export function faScalarInverse(s: Uint8Array): Uint8Array {
+    return scInverse(s);
+}
 
 /**
  * Compute s mod L

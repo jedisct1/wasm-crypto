@@ -643,7 +643,7 @@ function pack(r: Uint8Array, p: Int64Array[]): void {
     r[31] ^= fe25519Par(tx) << 7;
 }
 
-function scalarmult(p: Int64Array[], q: Int64Array[], s: Uint8Array): void {
+function scalarmult(p: Int64Array[], s: Uint8Array, q: Int64Array[]): void {
     let t: Int64Array[] = ge25519n();
     let b: u8;
 
@@ -661,7 +661,7 @@ function scalarmult(p: Int64Array[], q: Int64Array[], s: Uint8Array): void {
     }
 }
 
-function scalarmultBase(p: Int64Array[], s: Uint8Array): void {
+function scalarmultBase(s: Uint8Array, p: Int64Array[]): void {
     let q: Int64Array[] = ge25519n();
     let t: Int64Array[] = ge25519n();
     let b: u8;
@@ -693,7 +693,7 @@ function _signKeypairFromSeed(kp: Uint8Array): void {
     _hash(d, kp, 32);
     d[0] &= 248;
     d[31] = (d[31] & 127) | 64;
-    scalarmultBase(p, d);
+    scalarmultBase(d, p);
     pack(pk, p);
     for (let i = 0; i < 32; ++i) {
         kp[i + 32] = pk[i];
@@ -823,7 +823,7 @@ function _signDetached(sig: Uint8Array, m: Uint8Array, kp: Uint8Array, Z: Uint8A
     setU8(sig, kp.subarray(32), 32);
 
     scReduce(nonce);
-    scalarmultBase(R, nonce);
+    scalarmultBase(nonce, R);
     pack(sig, R);
 
     hs = _hashInit();
@@ -863,8 +863,8 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     _hashFinal(hs, h, 32 + 32 + m.length, r);
     scReduce(h);
 
-    scalarmult(R, A, h);
-    scalarmultBase(A, sig.subarray(32));
+    scalarmult(R, h, A);
+    scalarmultBase(sig.subarray(32), A);
     add(R, A);
     pack(rcheck, R);
 
@@ -1119,7 +1119,7 @@ export function hashInit(): Uint8Array { return _hashInit(); }
  * @param q Point
  * @param s Scalar
  */
-@global export function faScalarMult(q: Uint8Array, s: Uint8Array): Uint8Array {
+@global export function faScalarMult(s: Uint8Array, q: Uint8Array): Uint8Array {
     let p = new Uint8Array(32);
     let p_ = ge25519n();
     let q_ = ge25519n();
@@ -1129,7 +1129,7 @@ export function hashInit(): Uint8Array { return _hashInit(); }
     if (!faPointValidate(q)) {
         return null;
     }
-    scalarmult(p_, q_, s);
+    scalarmult(p_, s, q_);
     pack(p, p_);
     if (isIdentity(p)) {
         return null;
@@ -1142,13 +1142,13 @@ export function hashInit(): Uint8Array { return _hashInit(); }
  * @param q Point
  * @param s Scalar
  */
-@global export function faScalarMultClamp(q: Uint8Array, s: Uint8Array): Uint8Array {
+@global export function faScalarMultClamp(s: Uint8Array, q: Uint8Array): Uint8Array {
     let s_ = new Uint8Array(32);
     setU8(s_, s, 0);
     s_[0] &= 248;
     s_[31] = (s_[31] & 127) | 64;
 
-    return faScalarMult(q, s);
+    return faScalarMult(s, q);
 }
 
 /**
@@ -1159,7 +1159,7 @@ export function hashInit(): Uint8Array { return _hashInit(); }
     let c: Int64Array = 0;
     let p = new Uint8Array(32);
     let p_ = ge25519n();
-    scalarmultBase(p_, s);
+    scalarmultBase(s, p_);
     pack(p, p_);
     if (isIdentity(p)) {
         return null;
@@ -1182,7 +1182,7 @@ export function hashInit(): Uint8Array { return _hashInit(); }
     if (!unpack(q_, q, false)) {
         return false;
     }
-    scalarmult(p_, q_, l);
+    scalarmult(p_, l, q_);
 
     let c: i64 = 0;
     let x = p_[0];

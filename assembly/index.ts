@@ -700,7 +700,7 @@ function _signKeypairFromSeed(kp: Uint8Array): void {
     }
 }
 
-function unpackneg(r: Int64Array[], p: Uint8Array): bool {
+function unpack(r: Int64Array[], p: Uint8Array, neg: bool): bool {
     let t = fe25519n(),
         chk = fe25519n(),
         num = fe25519n(),
@@ -738,7 +738,7 @@ function unpackneg(r: Int64Array[], p: Uint8Array): bool {
     if (!fe25519Eq(chk, num)) {
         return false;
     }
-    if (fe25519Par(r[0]) === (p[31] >> 7)) {
+    if (fe25519Par(r[0]) === (p[31] >> 7) ^ (!neg as i64)) {
         fe25519Sub(r[0], fe25519_0, r[0]);
     }
     fe25519Mult(r[3], r[0], r[1]);
@@ -853,7 +853,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     if (!isCanonical(sig.subarray(32)) || !isCanonical(pk)) {
         return false;
     }
-    if (!unpackneg(A, pk)) {
+    if (!unpack(A, pk, true)) {
         return false;
     }
     let hs = _hashInit();
@@ -1123,10 +1123,9 @@ export function hashInit(): Uint8Array { return _hashInit(); }
     let p = new Uint8Array(32);
     let p_ = ge25519n();
     let q_ = ge25519n();
-    if (!unpackneg(q_, q)) {
+    if (!unpack(q_, q, false)) {
         return null;
     }
-    q[31] ^= 0x80;
     if (!faPointValidate(q)) {
         return null;
     }
@@ -1180,7 +1179,7 @@ export function hashInit(): Uint8Array { return _hashInit(); }
     for (let i = 0; i < 32; i++) {
         l[i] = _L[i] as u8;
     }
-    if (!unpackneg(q_, q)) {
+    if (!unpack(q_, q, false)) {
         return false;
     }
     scalarmult(p_, q_, l);

@@ -749,9 +749,11 @@ function unpackneg(r: Int64Array[], p: Uint8Array): bool {
 function isIdentity(s: Uint8Array): bool {
     let c: u8 = s[0] ^ 0x01;
 
-    for (let i = 1; i < 32; i++) {
+    for (let i = 1; i < 31; i++) {
         c |= s[i];
     }
+    c |= s[31] & 0x7f;
+
     return c === 0;
 }
 

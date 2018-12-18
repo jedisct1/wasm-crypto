@@ -14,8 +14,7 @@ function setU8(t: Uint8Array, s: Uint8Array, o: isize): void {
     }
 }
 
-@inline
-function Sigma0(x: u64): u64 {
+@inline function Sigma0(x: u64): u64 {
     return rotr(x, 28) ^ rotr(x, 34) ^ rotr(x, 39);
 }
 
@@ -256,8 +255,7 @@ _L[14] = 222;
 _L[15] = 20;
 _L[31] = 16;
 
-@inline
-function scn(): Int64Array { return new Int64Array(64); }
+@inline function scn(): Int64Array { return new Int64Array(64); }
 
 function scModL(r: Uint8Array, x: Int64Array): void {
     let carry: i64;
@@ -408,8 +406,9 @@ function scInverse(s: Uint8Array): Uint8Array {
 // mod(2^255-19) field arithmetic - Doesn't use 51-bit limbs yet to keep the
 // code short and simple
 
-@inline
-function fe25519n(): Int64Array { return new Int64Array(16); }
+@inline function fe25519n(): Int64Array {
+    return new Int64Array(16);
+}
 
 function fe25519(init: i64[]): Int64Array {
     let r: Int64Array = new Int64Array(16);
@@ -443,8 +442,7 @@ let I: Int64Array = fe25519([
     0xd7a7, 0x3dfb, 0x0099, 0x2b4d, 0xdf0b, 0x4fc1, 0x2480, 0x2b83,
 ]);
 
-@inline
-function fe25519Copy(r: Int64Array, a: Int64Array): void {
+@inline function fe25519Copy(r: Int64Array, a: Int64Array): void {
     for (let i = 0; i < 16; ++i) {
         r[i] = a[i];
     }
@@ -580,8 +578,7 @@ function fe25519Pow2523(o: Int64Array, i: Int64Array): void {
 
 // Ed25519 group arithmetic
 
-@inline
-function ge25519n(): Int64Array[] {
+@inline function ge25519n(): Int64Array[] {
     let e: Int64Array[] = [fe25519n(), fe25519n(), fe25519n(), fe25519n()];
 
     return e;
@@ -927,8 +924,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  * Fill an array with zeros
  * @param x Array to clear
  */
-@global
-export function memzero(x: Uint8Array): void {
+@global export function memzero(x: Uint8Array): void {
     for (let i = 0, j = x.length; i < j; ++i) {
         x[i] = 0;
     }
@@ -1037,8 +1033,7 @@ export function memzero(x: Uint8Array): void {
  * Initialize a multipart hash computation
  * @returns A hash function state
  */
-@global
-export function hashInit(): Uint8Array {
+@global export function hashInit(): Uint8Array {
     return _hashInit();
 }
 

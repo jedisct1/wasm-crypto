@@ -738,7 +738,7 @@ function unpack(r: Int64Array[], p: Uint8Array, neg: bool): bool {
     if (!fe25519Eq(chk, num)) {
         return false;
     }
-    if (fe25519Par(r[0]) === (p[31] >> 7) ^ (!neg as i64)) {
+    if (fe25519Par(r[0]) === (p[31] >> 7) ^ !neg) {
         fe25519Sub(r[0], fe25519_0, r[0]);
     }
     fe25519Mult(r[3], r[0], r[1]);

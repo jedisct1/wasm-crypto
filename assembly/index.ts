@@ -899,6 +899,9 @@ function unpackneg(r : Int64Array[], p : Uint8Array) : bool {
         den4 = fe25519n(),
         den6 = fe25519n();
 
+    if (isIdentity(p)) {
+        return false;
+    }
     fe25519Copy(r[2], fe25519_1);
     fe25519Unpack(r[1], p);
     fe25519Sq(num, r[1]);
@@ -931,6 +934,15 @@ function unpackneg(r : Int64Array[], p : Uint8Array) : bool {
     fe25519Mult(r[3], r[0], r[1]);
 
     return true;
+}
+
+function isIdentity(s : Uint8Array) : bool {
+    let c: u8 = s[0] ^ 0x01;
+
+    for (let i = 1; i < 32; i++) {
+        c |= s[i];
+    }
+    return c === 0;
 }
 
 function isCanonical(s : Uint8Array) : bool {
@@ -1303,9 +1315,12 @@ export function hashInit() : Uint8Array {return _hashInit();}
         return null;
     }
     q[31] ^= 0x80;
+    if (!faPointValidate(q)) {
+        return null;
+    }
     scalarmult(p_, q_, s);
     pack(p, p_);
-    if (allZeros(p)) {
+    if (isIdentity(p)) {
         return null;
     }
     return p;
@@ -1335,7 +1350,7 @@ export function hashInit() : Uint8Array {return _hashInit();}
     let p_ = ge25519n();
     scalarmultBase(p_, s);
     pack(p, p_);
-    if (allZeros(p)) {
+    if (isIdentity(p)) {
         return null;
     }
     return p;

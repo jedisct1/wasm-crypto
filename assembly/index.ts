@@ -403,6 +403,11 @@ function scInverse(s: Uint8Array): Uint8Array {
     return res;
 }
 
+@inline function scClamp(s: Uint8Array): void {
+    s[0] &= 248;
+    s[31] = (s[31] & 127) | 64;
+}
+
 // mod(2^255-19) field arithmetic - Doesn't use 51-bit limbs yet to keep the
 // code short and simple
 
@@ -688,8 +693,7 @@ function _signKeypairFromSeed(kp: Uint8Array): void {
     let p = ge25519n();
 
     _hash(d, kp, 32);
-    d[0] &= 248;
-    d[31] = (d[31] & 127) | 64;
+    scClamp(d);
     scalarmultBase(d, p);
     pack(pk, p);
     for (let i = 0; i < 32; ++i) {
@@ -825,8 +829,7 @@ function _signDetached(sig: Uint8Array, m: Uint8Array, kp: Uint8Array, Z: Uint8A
     r = _hashUpdate(hs, m, mlen, r);
     _hashFinal(hs, hram, 64 + mlen, r);
     scReduce(hram);
-    az[0] &= 248;
-    az[31] = (az[31] & 127) | 64;
+    scClamp(az);
     for (let i = 0; i < 32; ++i) {
         x[i] = nonce[i];
     }
@@ -1141,8 +1144,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 @global export function faScalarMultClamp(s: Uint8Array, q: Uint8Array): Uint8Array {
     let s_ = new Uint8Array(32);
     setU8(s_, s, 0);
-    s_[0] &= 248;
-    s_[31] = (s_[31] & 127) | 64;
+    scClamp(s_);
 
     return faScalarMult(s, q);
 }
@@ -1171,8 +1173,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 @global export function faScalarBaseClamp(s: Uint8Array): Uint8Array {
     let s_ = new Uint8Array(32);
     setU8(s_, s, 0);
-    s_[0] &= 248;
-    s_[31] = (s_[31] & 127) | 64;
+    scClamp(s_);
 
     return faScalarBase(s);
 }

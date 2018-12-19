@@ -1,4 +1,4 @@
-# eddsa-wasm-as
+# wasm-crypto
 
 A WebAssembly (via AssemblyScript) set of cryptographic primitives for building authentication and key exchange protocols.
 

@@ -9,5 +9,5 @@ Provides:
 - Non-deterministic signatures using Trevor Perrin's [generalized EdDSA](https://moderncrypto.org/mail-archive/curves/2017/000925.html) scheme
 - Hashing (simple + multi-parts)
 - HMAC-SHA-512
-- Ed25519 point validation, scalar multiplication with and without clamping
+- Ed25519 point validation, point addition, point substraction, scalar multiplication with and without clamping
 - Scalar reduction, scalar inversion modulo the order of the main subgroup for multiparty computation and oblivious pseudorandom functions.

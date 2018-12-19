@@ -706,9 +706,6 @@ function unpack(r: Int64Array[], p: Uint8Array, neg: bool): bool {
         den4 = fe25519n(),
         den6 = fe25519n();
 
-    if (isIdentity(p)) {
-        return false;
-    }
     fe25519Copy(r[2], fe25519_1);
     fe25519Unpack(r[1], p);
     fe25519Sq(num, r[1]);
@@ -850,7 +847,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     if (!isCanonical(sig.subarray(32)) || !isCanonical(pk)) {
         return false;
     }
-    if (!unpack(A, pk, true)) {
+    if (!unpack(A, pk, true) || isIdentity(pk)) {
         return false;
     }
     let hs = _hashInit();
@@ -1158,11 +1155,12 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     let c: Int64Array = 0;
     let p = new Uint8Array(32);
     let p_ = ge25519n();
-    scalarmultBase(s, p_);
-    pack(p, p_);
-    if (isIdentity(p)) {
+    if (allZeros(s)) {
         return null;
     }
+    scalarmultBase(s, p_);
+    pack(p, p_);
+
     return p;
 }
 
@@ -1189,4 +1187,40 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
         c |= x[i];
     }
     return c === 0;
+}
+
+/**
+ * Point addition
+ * @param p Point
+ * @param q Point
+ */
+@global export function faPointAdd(p: Uint8Array, q: Uint8Array): Uint8Array {
+    let o = new Uint8Array(32);
+    let p_ = ge25519n();
+    let q_ = ge25519n();
+    if (!unpack(p_, p, false) || !unpack(q_, q, false)) {
+        return null;
+    }
+    add(p_, q_);
+    pack(o, p_);
+
+    return o;
+}
+
+/**
+ * Point substraction
+ * @param p Point
+ * @param q Point
+ */
+@global export function faPointSub(p: Uint8Array, q: Uint8Array): Uint8Array {
+    let o = new Uint8Array(32);
+    let p_ = ge25519n();
+    let q_ = ge25519n();
+    if (!unpack(p_, p, false) || !unpack(q_, q, true)) {
+        return null;
+    }
+    add(p_, q_);
+    pack(o, p_);
+
+    return o;
 }

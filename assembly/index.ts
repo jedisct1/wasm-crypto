@@ -1165,6 +1165,19 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 }
 
 /**
+ * Multiply the base point by a clamped scalar `s`
+ * @param s Scalar
+ */
+@global export function faScalarBaseClamp(s: Uint8Array): Uint8Array {
+    let s_ = new Uint8Array(32);
+    setU8(s_, s, 0);
+    s_[0] &= 248;
+    s_[31] = (s_[31] & 127) | 64;
+
+    return faScalarBase(s);
+}
+
+/**
  * Verify that the point is on the main subgroup
  * @param q Point
  */

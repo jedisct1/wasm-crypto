@@ -1090,6 +1090,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  * HMAC-SHA-512
  * @param m Message
  * @param k Key
+ * @returns `HMAC-SHA-512(m, k)`
  */
 @global export function hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
     return _hmac(m, k);
@@ -1098,14 +1099,17 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 /**
  * Compute the multiplicative inverse of a scalar
  * @param s Scalar
+ * @returns `s^-1`
  */
 @global export function faScalarInverse(s: Uint8Array): Uint8Array {
     return scInverse(s);
 }
 
 /**
- * Compute s mod L
+ * Compute s mod the order of the prime order group
+ *
  * @param s Scalar
+ * @returns `s` reduced mod `L`
  */
 @global export function faScalarReduce(s: Uint8Array): Uint8Array {
     let r = new Uint8Array(32);
@@ -1120,8 +1124,9 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 
 /**
  * Multiply a point `q` by a scalar `s`
- * @param q Point
+ * @param q Compressed EC point
  * @param s Scalar
+ * @returns Compressed EC point `q * s`
  */
 @global export function faScalarMult(s: Uint8Array, q: Uint8Array): Uint8Array {
     let p = new Uint8Array(32);
@@ -1143,8 +1148,9 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 
 /**
  * Multiply a point `q` by a scalar `s` after clamping `s`
- * @param q Point
+ * @param q Compressed EC point
  * @param s Scalar
+ * @returns Compressed EC point `q * clamp(s)`
  */
 @global export function faScalarMultClamp(s: Uint8Array, q: Uint8Array): Uint8Array {
     let s_ = new Uint8Array(32);
@@ -1157,6 +1163,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 /**
  * Multiply the base point by a scalar `s`
  * @param s Scalar
+ * @returns Compressed EC point `B * s`
  */
 @global export function faScalarBase(s: Uint8Array): Uint8Array {
     let c: Int64Array = 0;
@@ -1174,6 +1181,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 /**
  * Multiply the base point by a clamped scalar `s`
  * @param s Scalar
+ * @returns Compressed EC point `B * clamp(s)`
  */
 @global export function faScalarBaseClamp(s: Uint8Array): Uint8Array {
     let s_ = new Uint8Array(32);
@@ -1185,7 +1193,8 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 
 /**
  * Verify that the point is on the main subgroup
- * @param q Point
+ * @param q Compressed EC point
+ * @returns `true` if verification succeeds
  */
 @global export function faPointValidate(q: Uint8Array): bool {
     let l = new Uint8Array(32);
@@ -1210,8 +1219,9 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 
 /**
  * Point addition
- * @param p Point
- * @param q Point
+ * @param p Compressed EC point
+ * @param q Compressed EC point
+ * @returns `p` + `q`
  */
 @global export function faPointAdd(p: Uint8Array, q: Uint8Array): Uint8Array {
     let o = new Uint8Array(32);
@@ -1228,8 +1238,9 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 
 /**
  * Point substraction
- * @param p Point
- * @param q Point
+ * @param p Compressed EC point
+ * @param q Compressed EC point
+ * @returns `p` - `q`
  */
 @global export function faPointSub(p: Uint8Array, q: Uint8Array): Uint8Array {
     let o = new Uint8Array(32);

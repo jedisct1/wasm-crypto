@@ -673,12 +673,13 @@ function scalarmultBase(s: Uint8Array, p: Int64Array[]): void {
     fe25519Copy(p[2], fe25519_1);
     fe25519Copy(p[3], fe25519_0);
 
+    fe25519Copy(q[2], fe25519_1);
+
     for (let i: isize = 0; i <= 255; ++i) {
         b = (s[(i >>> 3)] >>> (i as u8 & 7)) & 1;
         q[0] = fe25519(precomp_base[i][0]);
         q[1] = fe25519(precomp_base[i][1]);
-        q[2] = fe25519(precomp_base[i][2]);
-        q[3] = fe25519(precomp_base[i][3]);
+        q[3] = fe25519(precomp_base[i][2]);
         geCopy(t, p);
         add(t, q);
         cmov(p, t, b);

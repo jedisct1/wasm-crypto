@@ -10,4 +10,4 @@ Currently provides:
 - Hashing (simple + multi-parts)
 - HMAC-SHA-512
 - Ed25519 point validation, point addition, scalar multiplication with and without clamping
-- Scalar reduction, scalar inversion mod the order of the main subgroup for multiparty computation and oblivious pseudorandom functions.
+- Scalar reduction, scalar inversion mod the order of the Ed25519 main subgroup for multiparty computation and oblivious pseudorandom functions.

@@ -453,17 +453,6 @@ let I: Int64Array = fe25519([
     }
 }
 
-function fe25519Car(o: Int64Array): void {
-    let c: i64;
-
-    for (let i = 0; i < 16; ++i) {
-        o[i] += (1 << 16);
-        c = o[i] >> 16;
-        o[(i + 1) * isize(i < 15)] += c - 1 + 37 * (c - 1) * isize(i === 15);
-        o[i] -= c << 16;
-    }
-}
-
 function fe25519Cmov(p: Int64Array, q: Int64Array, b: i64): void {
     let c: i64 = ~(b - 1);
 
@@ -478,9 +467,9 @@ function fe25519Pack(o: Uint8Array, n: Int64Array): void {
     let t = fe25519n();
 
     fe25519Copy(t, n);
-    fe25519Car(t);
-    fe25519Car(t);
-    fe25519Car(t);
+    fe25519Carry(t);
+    fe25519Carry(t);
+    fe25519Carry(t);
     for (let j = 0; j < 2; ++j) {
         m[0] = t[0] - 0xffed;
         for (let i = 1; i < 15; ++i) {
@@ -535,6 +524,26 @@ function fe25519Unpack(o: Int64Array, n: Uint8Array): void {
     }
 }
 
+function fe25519Carry(o: Int64Array): void {
+    let c: i64;
+
+    for (let i = 0; i < 16; ++i) {
+        o[i] += (1 << 16);
+        c = o[i] >> 16;
+        o[(i + 1) * isize(i < 15)] += c - 1 + 37 * (c - 1) * isize(i === 15);
+        o[i] -= c << 16;
+    }
+}
+
+@inline function fe25519Reduce(o: Int64Array, a: Int64Array): void {
+    for (let i = 0; i < 15; ++i) {
+        a[i] += 38 as i64 * a[i + 16];
+    }
+    fe25519Copy(o, a);
+    fe25519Carry(o);
+    fe25519Carry(o);
+}
+
 function fe25519Mult(o: Int64Array, a: Int64Array, b: Int64Array): void {
     let t = new Int64Array(31);
 
@@ -543,12 +552,7 @@ function fe25519Mult(o: Int64Array, a: Int64Array, b: Int64Array): void {
             t[i + j] += a[i] * b[j];
         }
     }
-    for (let i = 0; i < 15; ++i) {
-        t[i] += 38 as i64 * t[i + 16];
-    }
-    fe25519Copy(o, t);
-    fe25519Car(o);
-    fe25519Car(o);
+    fe25519Reduce(o, t);
 }
 
 function fe25519Sq(o: Int64Array, a: Int64Array): void {

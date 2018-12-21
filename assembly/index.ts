@@ -39,18 +39,25 @@ function setU8(t: Uint8Array, s: Uint8Array, o: isize): void {
 }
 
 function load64(x: Uint8Array, offset: isize): u64 {
-    let u: u64 = 0;
-    for (let i = 0; i < 8; ++i) {
-        u = (u << 8) | x[offset + i];
-    }
-    return u;
+    return unchecked(x[offset + 0] as u64) |
+        unchecked(x[offset + 1] as u64) << 8 |
+        unchecked(x[offset + 2] as u64) << 16 |
+        unchecked(x[offset + 3] as u64) << 24 |
+        unchecked(x[offset + 4] as u64) << 32 |
+        unchecked(x[offset + 5] as u64) << 40 |
+        unchecked(x[offset + 6] as u64) << 48 |
+        unchecked(x[offset + 7] as u64) << 56;
 }
 
 function store64(x: Uint8Array, offset: isize, u: u64): void {
-    for (let i = 7; i >= 0; --i) {
-        x[offset + i] = u as u8;
-        u >>= 8;
-    }
+    x[offset + 0] = u as u8;
+    x[offset + 1] = (u >>> 8) as u8;
+    x[offset + 2] = (u >>> 16) as u8;
+    x[offset + 3] = (u >>> 24) as u8;
+    x[offset + 4] = (u >>> 32) as u8;
+    x[offset + 5] = (u >>> 40) as u8;
+    x[offset + 6] = (u >>> 48) as u8;
+    x[offset + 7] = (u >>> 56) as u8;
 }
 
 const K: u64[] = [
@@ -555,7 +562,7 @@ function fe25519Mult(o: Int64Array, a: Int64Array, b: Int64Array): void {
     fe25519Reduce(o, t);
 }
 
-function fe25519Sq(o: Int64Array, a: Int64Array): void {
+@inline function fe25519Sq(o: Int64Array, a: Int64Array): void {
     fe25519Mult(o, a, a);
 }
 
@@ -633,9 +640,10 @@ function add(p: Int64Array[], q: Int64Array[]): void {
 }
 
 @inline function cmov(p: Int64Array[], q: Int64Array[], b: u8): void {
-    for (let i = 0; i < 4; ++i) {
-        fe25519Cmov(p[i], q[i], b);
-    }
+    fe25519Cmov(p[0], q[0], b);
+    fe25519Cmov(p[1], q[1], b);
+    fe25519Cmov(p[2], q[2], b);
+    fe25519Cmov(p[3], q[3], b);
 }
 
 function pack(r: Uint8Array, p: Int64Array[]): void {

@@ -249,7 +249,7 @@ _L[15] = 20;
 _L[31] = 16;
 
 @inline function scn(): Int64Array {
-  return new Int64Array(64);
+    return new Int64Array(64);
 }
 
 function scModL(r: Uint8Array, x: Int64Array): void {
@@ -796,7 +796,7 @@ function _signSyntheticRHv(hs: Uint8Array, r: isize, Z: Uint8Array, sk: Uint8Arr
     r = _hashUpdate(hs, Z, Zlen, r);
     r = _hashUpdate(hs, zeros, 128 - ((32 + 3 + Zlen) & 127), r);
     r = _hashUpdate(hs, sk, 32, r);
-    r = _hashUpdate(hs, zeros, 128 - 32, r);
+    r = _hashUpdate(hs, zeros, 128 - (32 & 127), r);
     r = _hashUpdate(hs, empty_labelset, 3, r);
     r = _hashUpdate(hs, sk.subarray(32), 32, r);
 
@@ -852,10 +852,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     if (isIdentity(pk) || !unpack(A, pk, true)) {
         return false;
     }
-    let R = ge25519n();
-    let rcheck = new Uint8Array(32);
     let h = new Uint8Array(64);
-
     let hs = _hashInit();
     let r = _hashUpdate(hs, sig, 32, 0);
     r = _hashUpdate(hs, pk, 32, r);
@@ -863,6 +860,8 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     _hashFinal(hs, h, 32 + 32 + m.length, r);
     scReduce(h);
 
+    let R = ge25519n();
+    let rcheck = new Uint8Array(32);
     scalarmult(R, h, A);
     scalarmultBase(sig.subarray(32), A);
     add(R, A);

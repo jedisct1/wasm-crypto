@@ -2,6 +2,7 @@
 /// <reference path="../node_modules/assemblyscript/index.d.ts" />
 
 import 'allocator/tlsf';
+import { LOAD, STORE } from 'internal/arraybuffer';
 import { precompBase } from './precomp';
 export { memory };
 
@@ -37,26 +38,12 @@ function setU8(t: Uint8Array, s: Uint8Array, o: isize): void {
     return (x & y) ^ (x & z) ^ (y & z);
 }
 
-function load64(x: Uint8Array, offset: isize): u64 {
-    return unchecked(x[offset + 0] as u64) |
-        unchecked(x[offset + 1] as u64) << 8 |
-        unchecked(x[offset + 2] as u64) << 16 |
-        unchecked(x[offset + 3] as u64) << 24 |
-        unchecked(x[offset + 4] as u64) << 32 |
-        unchecked(x[offset + 5] as u64) << 40 |
-        unchecked(x[offset + 6] as u64) << 48 |
-        unchecked(x[offset + 7] as u64) << 56;
+@inline function load64(x: Uint8Array, offset: isize): u64 {
+    return LOAD<u64>(x.buffer, 0, offset);
 }
 
-function store64(x: Uint8Array, offset: isize, u: u64): void {
-    x[offset + 0] = u as u8;
-    x[offset + 1] = (u >>> 8) as u8;
-    x[offset + 2] = (u >>> 16) as u8;
-    x[offset + 3] = (u >>> 24) as u8;
-    x[offset + 4] = (u >>> 32) as u8;
-    x[offset + 5] = (u >>> 40) as u8;
-    x[offset + 6] = (u >>> 48) as u8;
-    x[offset + 7] = (u >>> 56) as u8;
+@inline function store64(x: Uint8Array, offset: isize, u: u64): void {
+    STORE<u64>(x.buffer, 0, u, offset);
 }
 
 const K: u64[] = [

@@ -1,5 +1,5 @@
 
-export function precompBase(): i64[][][] {
+@inline export function precompBase(): i64[][][] {
     const table: i64[][][] = [
         [
             [ 54554, 36645, 11616, 51542, 42930, 38181, 51040, 26924, 56412, 64982, 57905, 49316, 21502, 52590, 14035, 8553 ],

@@ -1123,7 +1123,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     let r = new Uint8Array(32);
     let s_ = new Uint8Array(64);
     if (s_.length < 40 || s_.length > 64) {
-        throw "faScalarReduce() argument should be between 40 and 64 bytes long";
+        throw new Error('faScalarReduce() argument should be between 40 and 64 bytes long');
     }
     setU8(s_, s, 0);
     scReduce(s_);

@@ -451,9 +451,10 @@ let I = fe25519([
     }
 }
 
-@inline function fe25519Cmov(p: Int64Array, q: Int64Array, c: i64): void {
+@inline function fe25519Cmov(p: Int64Array, q: Int64Array, b: i64): void {
+    let c = ~(b - 1);
     for (let i = 0; i < 16; ++i) {
-        p[i] = select(q[i], p[i], c);
+        p[i] ^= (p[i] ^ q[i]) & c;
     }
 }
 

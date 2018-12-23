@@ -1116,12 +1116,15 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 /**
  * Compute s mod the order of the prime order group
  *
- * @param s Scalar
+ * @param s Scalar (between 40 and 64 bytes)
  * @returns `s` reduced mod `L`
  */
 @global export function faScalarReduce(s: Uint8Array): Uint8Array {
     let r = new Uint8Array(32);
     let s_ = new Uint8Array(64);
+    if (s_.length < 40 || s_.length > 64) {
+        throw "faScalarReduce() argument should be between 40 and 64 bytes long";
+    }
     setU8(s_, s, 0);
     scReduce(s_);
     for (let i = 0; i < 32; i++) {

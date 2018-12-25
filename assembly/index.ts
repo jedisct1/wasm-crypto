@@ -446,9 +446,11 @@ let I = fe25519([
 ]);
 
 @inline function fe25519Copy(r: Int64Array, a: Int64Array): void {
-    for (let i = 0; i < 16; ++i) {
-        r[i] = a[i];
-    }
+    memory.copy(
+        changetype<usize>(r.buffer) + r.byteOffset,
+        changetype<usize>(a.buffer) + a.byteOffset,
+        16 * Int64Array.BYTES_PER_ELEMENT
+    );
 }
 
 @inline function fe25519Cmov(p: Int64Array, q: Int64Array, b: i64): void {
@@ -699,9 +701,12 @@ function _signKeypairFromSeed(kp: Uint8Array): void {
     scClamp(d);
     scalarmultBase(d, p);
     pack(pk, p);
-    for (let i = 0; i < 32; ++i) {
-        kp[i + 32] = pk[i];
-    }
+
+    memory.copy(
+        changetype<usize>(kp.buffer) + kp.byteOffset + 32,
+        changetype<usize>(pk.buffer),
+        32
+    );
 }
 
 function unpack(r: Int64Array[], p: Uint8Array, neg: bool): bool {
@@ -833,23 +838,28 @@ function _signDetached(sig: Uint8Array, m: Uint8Array, kp: Uint8Array, Z: Uint8A
     _hashFinal(hs, hram, 64 + mlen, r);
     scReduce(hram);
     scClamp(az);
+
+    memory.copy(
+        changetype<usize>(x.buffer),
+        changetype<usize>(nonce.buffer),
+        32 * Int64Array.BYTES_PER_ELEMENT
+    );
+
     for (let i = 0; i < 32; ++i) {
-        x[i] = nonce[i];
-    }
-    for (let i = 0; i < 32; ++i) {
+        let hi = hram[i] as i64;
         for (let j = 0; j < 32; ++j) {
-            x[i + j] += (hram[i] as i64) * (az[j] as i64);
+            x[i + j] += hi * (az[j] as i64);
         }
     }
     scModL(sig.subarray(32), x);
 }
 
 function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bool {
-    if (!isCanonical(pk) || !isCanonical(sig.subarray(32))) {
+    if (!isCanonical(pk) || isIdentity(pk) || !isCanonical(sig.subarray(32))) {
         return false;
     }
     let A = ge25519n();
-    if (isIdentity(pk) || !unpack(A, pk, true)) {
+    if (!unpack(A, pk, true)) {
         return false;
     }
     let h = new Uint8Array(64);
@@ -927,9 +937,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  * @param x Array to clear
  */
 @global export function memzero(x: Uint8Array): void {
-    for (let i = 0, j = x.length; i < j; ++i) {
-        x[i] = 0;
-    }
+    memory.fill(changetype<usize>(x.buffer), 0, x.length);
 }
 
 /**
@@ -993,9 +1001,11 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
         throw new Error('bad seed size');
     }
     let kp = new Uint8Array(SIGN_KEYPAIRBYTES);
-    for (let i = 0; i < 32; ++i) {
-        kp[i] = seed[i];
-    }
+    memory.copy(
+        changetype<usize>(kp.buffer),
+        changetype<usize>(seed.buffer) + seed.byteOffset,
+        32
+    );
     _signKeypairFromSeed(kp);
 
     return kp;
@@ -1009,10 +1019,11 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 @global export function signPublicKey(kp: Uint8Array): Uint8Array {
     const len = SIGN_PUBLICKEYBYTES;
     let pk = new Uint8Array(len);
-
-    for (let i = 0; i < len; ++i) {
-        pk[i] = kp[i + 32];
-    }
+    memory.copy(
+        changetype<usize>(pk.buffer),
+        changetype<usize>(kp.buffer) + kp.byteOffset + 32,
+        len
+    );
     return pk;
 }
 
@@ -1024,10 +1035,11 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 @global export function signSecretKey(kp: Uint8Array): Uint8Array {
     const len = SIGN_SECRETKEYBYTES;
     let sk = new Uint8Array(len);
-
-    for (let i = 0; i < len; ++i) {
-        sk[i] = kp[i];
-    }
+    memory.copy(
+        changetype<usize>(sk.buffer),
+        changetype<usize>(kp.buffer) + kp.byteOffset,
+        len
+    );
     return sk;
 }
 
@@ -1116,9 +1128,11 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     }
     setU8(s_, s, 0);
     scReduce(s_);
-    for (let i = 0; i < 32; ++i) {
-        r[i] = s_[i];
-    }
+    memory.copy(
+        changetype<usize>(r.buffer),
+        changetype<usize>(s_.buffer),
+        32
+    );
     return r;
 }
 
@@ -1129,13 +1143,13 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  * @returns Compressed EC point `q * s`
  */
 @global export function faScalarMult(s: Uint8Array, q: Uint8Array): Uint8Array {
-    let p = new Uint8Array(32);
     let p_ = ge25519n();
     let q_ = ge25519n();
     if (!unpack(q_, q, false) || !faPointValidate(q)) {
         return null;
     }
     scalarmult(p_, s, q_);
+    let p = new Uint8Array(32);
     pack(p, p_);
     if (isIdentity(p)) {
         return null;
@@ -1163,12 +1177,11 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  * @returns Compressed EC point `B * s`
  */
 @global export function faScalarBase(s: Uint8Array): Uint8Array {
-    let c: Int64Array = 0;
-    let p = new Uint8Array(32);
-    let p_ = ge25519n();
     if (allZeros(s)) {
         return null;
     }
+    let p = new Uint8Array(32);
+    let p_ = ge25519n();
     scalarmultBase(s, p_);
     pack(p, p_);
 

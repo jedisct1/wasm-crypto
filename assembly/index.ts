@@ -8,10 +8,13 @@ export { memory };
 
 // SHA512
 
-function setU8(t: Uint8Array, s: Uint8Array, o: isize): void {
-    for (let i: isize = 0, len = s.length; i < len; ++i) {
-        t[i + o] = s[i];
-    }
+@inline function setU8(dest: Uint8Array, src: Uint8Array, offset: isize = 0): void {
+    // TODO bounds check? "dest.length - offset >= src.length"
+    memory.copy(
+      changetype<usize>(dest.buffer) + dest.byteOffset + offset,
+      changetype<usize>(src.buffer)  + src.byteOffset,
+      src.length
+    );
 }
 
 @inline function Sigma0(x: u64): u64 {
@@ -165,7 +168,7 @@ function _hashFinal(st: Uint8Array, out: Uint8Array, t: isize, r: isize): void {
     let w = st.subarray(64);
     let x = new Uint8Array(256);
 
-    setU8(x, w.subarray(0, r), 0);
+    setU8(x, w.subarray(0, r));
     x[r] = 128;
     r = 256 - 128 * isize(r < 112);
     x[r - 9] = 0;
@@ -191,11 +194,11 @@ function _hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
     if (k.length > 128) {
         k = hash(k);
     }
-    setU8(b, k, 0);
+    setU8(b, k);
     for (let i = 0; i < 128; ++i) {
         b[i] ^= 0x5c;
     }
-    setU8(ib, k, 0);
+    setU8(ib, k);
     for (let i = 0; i < 128; ++i) {
         ib[i] ^= 0x36;
     }
@@ -505,15 +508,16 @@ function fe25519Par(a: Int64Array): u8 {
 }
 
 function fe25519Unpack(o: Int64Array, n: Uint8Array): void {
+    var nb = n.buffer;
     for (let i = 0; i < 16; ++i) {
-        o[i] = (n[2 * i] as i64) + (n[2 * i + 1] as i64 << 8);
+        o[i] = LOAD<u16, i64>(nb, i);
     }
     o[15] &= 0x7fff;
 }
 
 @inline function fe25519Add(o: Int64Array, a: Int64Array, b: Int64Array): void {
     for (let i = 0; i < 16; ++i) {
-        o[i] = (a[i] + b[i]);
+        o[i] = a[i] + b[i];
     }
 }
 
@@ -536,7 +540,7 @@ function fe25519Carry(o: Int64Array): void {
 
 @inline function fe25519Reduce(o: Int64Array, a: Int64Array): void {
     for (let i = 0; i < 15; ++i) {
-        a[i] += 38 as i64 * a[i + 16];
+        a[i] += 38 * a[i + 16];
     }
     fe25519Copy(o, a);
     fe25519Carry(o);
@@ -547,8 +551,9 @@ function fe25519Mult(o: Int64Array, a: Int64Array, b: Int64Array): void {
     let t = new Int64Array(31);
 
     for (let i = 0; i < 16; ++i) {
+        let ai = a[i];
         for (let j = 0; j < 16; ++j) {
-            t[i + j] += a[i] * b[j];
+            t[i + j] += ai * b[j];
         }
     }
     fe25519Reduce(o, t);
@@ -764,11 +769,10 @@ function isIdentity(s: Uint8Array): bool {
 }
 
 function isCanonical(s: Uint8Array): bool {
-    let c: u32 = (s[31] & 0x7f) ^ 0x7f;
-
     if (allZeros(s)) {
         return false;
     }
+    let c: u32 = (s[31] & 0x7f) ^ 0x7f;
     for (let i = 30; i > 0; --i) {
         c |= s[i] ^ 0xff;
     }
@@ -1126,7 +1130,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     if (s_.length < 40 || s_.length > 64) {
         throw new Error('faScalarReduce() argument should be between 40 and 64 bytes long');
     }
-    setU8(s_, s, 0);
+    setU8(s_, s);
     scReduce(s_);
     memory.copy(
         changetype<usize>(r.buffer),
@@ -1165,7 +1169,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  */
 @global export function faScalarMultClamp(s: Uint8Array, q: Uint8Array): Uint8Array {
     let s_ = new Uint8Array(32);
-    setU8(s_, s, 0);
+    setU8(s_, s);
     scClamp(s_);
 
     return faScalarMult(s, q);
@@ -1195,7 +1199,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  */
 @global export function faScalarBaseClamp(s: Uint8Array): Uint8Array {
     let s_ = new Uint8Array(32);
-    setU8(s_, s, 0);
+    setU8(s_, s);
     scClamp(s_);
 
     return faScalarBase(s);

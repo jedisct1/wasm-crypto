@@ -9,11 +9,14 @@ export { memory };
 // SHA512
 
 @inline function setU8(dest: Uint8Array, src: Uint8Array, offset: isize = 0): void {
-    // TODO bounds check? "dest.length - offset >= src.length"
+    let len = src.length;
+    if (dest.length - offset >= len) {
+        throw new Error("Out of bound");
+    }
     memory.copy(
-      changetype<usize>(dest.buffer) + dest.byteOffset + offset,
-      changetype<usize>(src.buffer)  + src.byteOffset,
-      src.length
+        changetype<usize>(dest.buffer) + dest.byteOffset + offset,
+        changetype<usize>(src.buffer)  + src.byteOffset,
+        len
     );
 }
 
@@ -418,11 +421,9 @@ function scInverse(s: Uint8Array): Uint8Array {
 
 function fe25519(init: i64[]): Int64Array {
     let r = new Int64Array(16);
-    memory.copy(
-      changetype<usize>(r.buffer),
-      changetype<usize>(init.buffer_),
-      16 * Int64Array.BYTES_PER_ELEMENT
-    );
+    for (let i = 0, len = init.length; i < len; ++i) {
+        r[i] = init[i];
+    }
     return r;
 }
 

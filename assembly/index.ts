@@ -413,10 +413,11 @@ function scInverse(s: Uint8Array): Uint8Array {
 
 function fe25519(init: i64[]): Int64Array {
     let r = new Int64Array(16);
-
-    for (let i = 0, len = init.length; i < len; ++i) {
-        r[i] = init[i];
-    }
+    memory.copy(
+      changetype<usize>(r.buffer),
+      changetype<usize>(init.buffer_),
+      16 * Int64Array.BYTES_PER_ELEMENT
+    );
     return r;
 }
 

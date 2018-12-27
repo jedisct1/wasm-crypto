@@ -88,7 +88,7 @@ function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
     let pos = 0;
     while (n >= 128) {
         for (let i = 0; i < 16; ++i) {
-            w[i] = load64(m, 8 * i + pos);
+            w[i] = load64(m, (i << 3) + pos);
         }
         for (let i = 0; i < 80; ++i) {
             for (let j = 0; j < 8; ++j) {
@@ -107,14 +107,13 @@ function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
             }
         }
         for (let i = 0; i < 8; ++i) {
-            a[i] += z[i];
-            z[i] = a[i];
+            z[i] = a[i] = a[i] + z[i];
         }
         pos += 128;
         n -= 128;
     }
     for (let i = 0; i < 8; ++i) {
-        store64(st, 8 * i, z[i]);
+        store64(st, i << 3, z[i]);
     }
     return n;
 }
@@ -133,10 +132,11 @@ for (let i = 0; i < 64; ++i) {
 
 function _hashInit(): Uint8Array {
     let st = new Uint8Array(64 + 128 + 8 * 2);
-
-    for (let i = 0; i < 64; ++i) {
-        st[i] = iv[i];
-    }
+    memory.copy(
+      changetype<usize>(st.buffer),
+      changetype<usize>(iv.buffer),
+      64,
+    );
     return st;
 }
 
@@ -144,11 +144,8 @@ function _hashUpdate(st: Uint8Array, m: Uint8Array, n: isize, r: isize): isize {
     let w = st.subarray(64);
     let pos = 0;
     let av = 128 - r;
-    let tc = n;
+    let tc = max(n, av);
 
-    if (tc > av) {
-        tc = av;
-    }
     setU8(w, m.subarray(0, tc), r);
     r += tc;
     n -= tc;
@@ -173,19 +170,21 @@ function _hashFinal(st: Uint8Array, out: Uint8Array, t: isize, r: isize): void {
 
     setU8(x, w.subarray(0, r));
     x[r] = 128;
-    r = 256 - 128 * isize(r < 112);
+    r = 256 - (isize(r < 112) << 7);
     x[r - 9] = 0;
     store64(x, r - 8, t << 3);
     _hashblocks(st, x, r);
-    for (let i = 0; i < 64; ++i) {
-        out[i] = st[i];
-    }
+
+    memory.copy(
+        changetype<usize>(out.buffer) + out.byteOffset,
+        changetype<usize>(st.buffer)  + st.byteOffset,
+        64,
+    );
 }
 
 function _hash(out: Uint8Array, m: Uint8Array, n: isize): void {
     let st = _hashInit();
     let r = _hashUpdate(st, m, n, 0);
-
     _hashFinal(st, out, n, r);
 }
 
@@ -217,7 +216,6 @@ function _hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
 
 function verify32(x: Uint8Array, y: Uint8Array): bool {
     let d: u8 = 0;
-
     for (let i = 0; i < 32; ++i) {
         d |= x[i] ^ y[i];
     }
@@ -316,9 +314,13 @@ function scCarry(a: Int64Array): void {
 function scMult(o: Int64Array, a: Int64Array, b: Int64Array): void {
     let r = new Uint8Array(32);
     let t = new Int64Array(64);
-    for (let i = 0; i < 64; ++i) {
-        t[i] = 0;
-    }
+
+    memory.fill(
+        changetype<usize>(t.buffer),
+        0,
+        64 * Int64Array.BYTES_PER_ELEMENT,
+    );
+
     for (let i = 0; i < 32; ++i) {
         let ai = a[i];
         for (let j = 0; j < 32; ++j) {
@@ -350,8 +352,8 @@ function scInverse(s: Uint8Array): Uint8Array {
     let res = new Uint8Array(32);
     let _1 = scn();
     for (let i = 0; i < 32; ++i) {
-        _1[i] = s[i]
-    };
+        _1[i] = s[i];
+    }
     let _10 = scn(),
         _100 = scn(),
         _11 = scn(),
@@ -464,9 +466,9 @@ let I = fe25519([
 }
 
 @inline function fe25519Cmov(p: Int64Array, q: Int64Array, b: i64): void {
-    let c = ~(b - 1);
+    let mask = -b;
     for (let i = 0; i < 16; ++i) {
-        p[i] ^= (p[i] ^ q[i]) & c;
+        p[i] ^= (p[i] ^ q[i]) & mask;
     }
 }
 
@@ -540,7 +542,7 @@ function fe25519Carry(o: Int64Array): void {
 
     for (let i = 0; i < 16; ++i) {
         let oi = o[i];
-        oi += (1 << 16);
+        oi += 1 << 16;
         c = oi >> 16;
         o[(i + 1) * isize(i < 15)] += c - 1 + 37 * (c - 1) * isize(i === 15);
         o[i] = oi - (c << 16);

@@ -15,7 +15,7 @@ export { memory };
     }
     memory.copy(
         changetype<usize>(dest.buffer) + dest.byteOffset + offset,
-        changetype<usize>(src.buffer)  + src.byteOffset,
+        changetype<usize>(src.buffer) + src.byteOffset,
         len
     );
 }
@@ -133,9 +133,9 @@ for (let i = 0; i < 64; ++i) {
 function _hashInit(): Uint8Array {
     let st = new Uint8Array(64 + 128 + 8 * 2);
     memory.copy(
-      changetype<usize>(st.buffer),
-      changetype<usize>(iv.buffer),
-      64,
+        changetype<usize>(st.buffer),
+        changetype<usize>(iv.buffer),
+        64,
     );
     return st;
 }
@@ -177,7 +177,7 @@ function _hashFinal(st: Uint8Array, out: Uint8Array, t: isize, r: isize): void {
 
     memory.copy(
         changetype<usize>(out.buffer) + out.byteOffset,
-        changetype<usize>(st.buffer)  + st.byteOffset,
+        changetype<usize>(st.buffer) + st.byteOffset,
         64,
     );
 }
@@ -267,7 +267,7 @@ function scModL(r: Uint8Array, x: Int64Array): void {
             let xj = x[j];
             xj += carry - 16 * xi * _L[j - (i - 32)];
             carry = (xj + 128) >> 8;
-            x[j]  = xj - (carry << 8);
+            x[j] = xj - (carry << 8);
         }
         x[k] += carry;
         x[i] = 0;
@@ -277,7 +277,7 @@ function scModL(r: Uint8Array, x: Int64Array): void {
         let xj = x[j];
         xj += carry - (x[31] >> 4) * _L[j];
         carry = xj >> 8;
-        x[j]  = xj & 255;
+        x[j] = xj & 255;
     }
     for (let j = 0; j < 32; ++j) {
         x[j] -= carry * _L[j];
@@ -412,6 +412,24 @@ function scInverse(s: Uint8Array): Uint8Array {
 @inline function scClamp(s: Uint8Array): void {
     s[0] &= 248;
     s[31] = (s[31] & 127) | 64;
+}
+
+function scAdd(a: Uint8Array, b: Uint8Array): void {
+    let c: u32 = 0;
+    for (let i = 0, len = a.length; i < len; i++) {
+        c += (a[i] as u32) + (b[i] as u32);
+        a[i] = c as u8;
+        c >>= 8;
+    }
+}
+
+function scSub(a: Uint8Array, b: Uint8Array): void {
+    let c: u32 = 0;
+    for (let i = 0, len = a.length; i < len; i++) {
+        c = (a[i] as u32) - (b[i] as u32) - c;
+        a[i] = c as u8;
+        c = (c >> 8) & 1;
+    }
 }
 
 // mod(2^255-19) field arithmetic - Doesn't use 51-bit limbs yet to keep the
@@ -1149,6 +1167,76 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
         32
     );
     return r;
+}
+
+/**
+ * Compute the additive inverse of a scalar (mod L)
+ * @param s Scalar
+ * @returns `-s`
+ */
+@global export function faScalarNegate(s: Uint8Array): Uint8Array {
+    let t = new Uint8Array(32), t_ = new Uint8Array(64), s_ = new Uint8Array(64);
+    for (let i = 0; i < 32; i++) {
+        t_[32 + i] = _L[i] as u8;
+    }
+    setU8(s_, s);
+    scSub(t_, s_);
+    scReduce(t_);
+    memory.copy(
+        changetype<usize>(t.buffer),
+        changetype<usize>(t_.buffer),
+        32
+    );
+    return t;
+}
+
+/**
+ * Compute the complement of a scalar (mod L)
+ * @param s Scalar
+ * @returns `1-s`
+ */
+@global export function faScalarComplement(s: Uint8Array): Uint8Array {
+    let t = new Uint8Array(32), t_ = new Uint8Array(64), s_ = new Uint8Array(64);
+    t_[0] = 1;
+    for (let i = 0; i < 32; i++) {
+        t_[32 + i] = _L[i] as u8;
+    }
+    setU8(s_, s);
+    scSub(t_, s_);
+    scReduce(t_);
+    memory.copy(
+        changetype<usize>(t.buffer),
+        changetype<usize>(t_.buffer),
+        32
+    );
+    return t;
+}
+
+/**
+ * Compute `x + y (mod L)`
+ * @param x
+ * @param y
+ * @returns `x + y (mod L)`
+ */
+@global export function faScalarAdd(x: Uint8Array, y: Uint8Array): Uint8Array {
+    let x_ = new Uint8Array(64), y_ = new Uint8Array(64);
+    setU8(x_, x);
+    setU8(y_, y);
+    scAdd(x_, y_);
+
+    return faScalarReduce(x_);
+}
+
+/**
+ * Compute `x - y (mod L)`
+ * @param x
+ * @param y
+ * @returns `x - y (mod L)`
+ */
+@global export function faScalarSub(x: Uint8Array, y: Uint8Array): Uint8Array {
+    let yn = faScalarNegate(y);
+
+    return faScalarAdd(x, yn);
 }
 
 /**

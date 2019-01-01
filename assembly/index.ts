@@ -1214,8 +1214,8 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 
 /**
  * Compute `x + y (mod L)`
- * @param x
- * @param y
+ * @param x Scalar
+ * @param y Scalar
  * @returns `x + y (mod L)`
  */
 @global export function faScalarAdd(x: Uint8Array, y: Uint8Array): Uint8Array {
@@ -1229,8 +1229,8 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 
 /**
  * Compute `x - y (mod L)`
- * @param x
- * @param y
+ * @param x Scalar
+ * @param y Scalar
  * @returns `x - y (mod L)`
  */
 @global export function faScalarSub(x: Uint8Array, y: Uint8Array): Uint8Array {

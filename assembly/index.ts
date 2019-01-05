@@ -6,19 +6,13 @@ import { LOAD, STORE } from 'internal/arraybuffer';
 import { precompBase } from './precomp';
 export { memory };
 
-// SHA512
-
-@inline function setU8(dest: Uint8Array, src: Uint8Array, offset: isize = 0): void {
-    let len = src.length;
-    if (len > dest.length - offset) {
-        throw new Error("Out of bound");
+function setU8(t: Uint8Array, s: Uint8Array, o: isize = 0): void {
+    for (let i: isize = 0, len = s.length; i < len; ++i) {
+        t[i + o] = s[i];
     }
-    memory.copy(
-        changetype<usize>(dest.buffer) + dest.byteOffset + offset,
-        changetype<usize>(src.buffer) + src.byteOffset,
-        len
-    );
 }
+
+// SHA512
 
 @inline function Sigma0(x: u64): u64 {
     return rotr(x, 28) ^ rotr(x, 34) ^ rotr(x, 39);
@@ -107,7 +101,8 @@ function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
             }
         }
         for (let i = 0; i < 8; ++i) {
-            z[i] = a[i] = a[i] + z[i];
+            a[i] += z[i];
+            z[i] = a[i];
         }
         pos += 128;
         n -= 128;
@@ -132,11 +127,10 @@ for (let i = 0; i < 64; ++i) {
 
 function _hashInit(): Uint8Array {
     let st = new Uint8Array(64 + 128 + 8 * 2);
-    memory.copy(
-        changetype<usize>(st.buffer),
-        changetype<usize>(iv.buffer),
-        64,
-    );
+
+    for (let i = 0; i < 64; ++i) {
+        st[i] = iv[i];
+    }
     return st;
 }
 
@@ -144,7 +138,7 @@ function _hashUpdate(st: Uint8Array, m: Uint8Array, n: isize, r: isize): isize {
     let w = st.subarray(64);
     let pos = 0;
     let av = 128 - r;
-    let tc = max(n, av);
+    let tc = min(n, av);
 
     setU8(w, m.subarray(0, tc), r);
     r += tc;
@@ -174,17 +168,15 @@ function _hashFinal(st: Uint8Array, out: Uint8Array, t: isize, r: isize): void {
     x[r - 9] = 0;
     store64(x, r - 8, t << 3);
     _hashblocks(st, x, r);
-
-    memory.copy(
-        changetype<usize>(out.buffer) + out.byteOffset,
-        changetype<usize>(st.buffer) + st.byteOffset,
-        64,
-    );
+    for (let i = 0; i < 64; ++i) {
+        out[i] = st[i];
+    }
 }
 
 function _hash(out: Uint8Array, m: Uint8Array, n: isize): void {
     let st = _hashInit();
     let r = _hashUpdate(st, m, n, 0);
+
     _hashFinal(st, out, n, r);
 }
 
@@ -216,6 +208,7 @@ function _hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
 
 function verify32(x: Uint8Array, y: Uint8Array): bool {
     let d: u8 = 0;
+
     for (let i = 0; i < 32; ++i) {
         d |= x[i] ^ y[i];
     }
@@ -262,30 +255,26 @@ function scModL(r: Uint8Array, x: Int64Array): void {
     for (let i = 63; i >= 32; --i) {
         carry = 0;
         let k = i - 12;
-        let xi = x[i];
         for (let j = i - 32; j < k; ++j) {
-            let xj = x[j];
-            xj += carry - 16 * xi * _L[j - (i - 32)];
-            carry = (xj + 128) >> 8;
-            x[j] = xj - (carry << 8);
+            x[j] += carry - 16 * x[i] * _L[j - (i - 32)];
+            carry = (x[j] + 128) >> 8;
+            x[j] -= carry * 256;
         }
         x[k] += carry;
         x[i] = 0;
     }
     carry = 0;
     for (let j = 0; j < 32; ++j) {
-        let xj = x[j];
-        xj += carry - (x[31] >> 4) * _L[j];
-        carry = xj >> 8;
-        x[j] = xj & 255;
+        x[j] += carry - (x[31] >> 4) * _L[j];
+        carry = x[j] >> 8;
+        x[j] &= 255;
     }
     for (let j = 0; j < 32; ++j) {
         x[j] -= carry * _L[j];
     }
     for (let i = 0; i < 32; ++i) {
-        let xi = x[i];
-        x[i + 1] += xi >> 8;
-        r[i] = xi as u8;
+        x[i + 1] += x[i] >> 8;
+        r[i] = x[i] as u8;
     }
 }
 
@@ -314,12 +303,6 @@ function scCarry(a: Int64Array): void {
 function scMult(o: Int64Array, a: Int64Array, b: Int64Array): void {
     let r = new Uint8Array(32);
     let t = new Int64Array(64);
-
-    memory.fill(
-        changetype<usize>(t.buffer),
-        0,
-        64 * Int64Array.BYTES_PER_ELEMENT,
-    );
 
     for (let i = 0; i < 32; ++i) {
         let ai = a[i];
@@ -441,6 +424,7 @@ function scSub(a: Uint8Array, b: Uint8Array): void {
 
 function fe25519(init: i64[]): Int64Array {
     let r = new Int64Array(16);
+
     for (let i = 0, len = init.length; i < len; ++i) {
         r[i] = init[i];
     }
@@ -476,15 +460,13 @@ let I = fe25519([
 ]);
 
 @inline function fe25519Copy(r: Int64Array, a: Int64Array): void {
-    memory.copy(
-        changetype<usize>(r.buffer) + r.byteOffset,
-        changetype<usize>(a.buffer) + a.byteOffset,
-        16 * Int64Array.BYTES_PER_ELEMENT
-    );
+    for (let i = 0; i < 16; ++i) {
+        r[i] = a[i];
+    }
 }
 
 @inline function fe25519Cmov(p: Int64Array, q: Int64Array, b: i64): void {
-    let mask = -b;
+    let mask = ~(b - 1);
     for (let i = 0; i < 16; ++i) {
         p[i] ^= (p[i] ^ q[i]) & mask;
     }
@@ -502,9 +484,8 @@ function fe25519Pack(o: Uint8Array, n: Int64Array): void {
     for (let j = 0; j < 2; ++j) {
         m[0] = t[0] - 0xffed;
         for (let i = 1; i < 15; ++i) {
-            let mp = m[i - 1];
-            m[i] = t[i] - 0xffff - ((mp >> 16) & 1);
-            m[i - 1] = mp & 0xffff;
+            m[i] = t[i] - 0xffff - ((m[i - 1] >> 16) & 1);
+            m[i - 1] &= 0xffff;
         }
         m[15] = t[15] - 0x7fff - ((m[14] >> 16) & 1);
         b = (m[15] >> 16) & 1;
@@ -536,7 +517,7 @@ function fe25519Par(a: Int64Array): u8 {
 }
 
 function fe25519Unpack(o: Int64Array, n: Uint8Array): void {
-    var nb = n.buffer;
+    let nb = n.buffer;
     for (let i = 0; i < 16; ++i) {
         o[i] = LOAD<u16, i64>(nb, i);
     }
@@ -559,17 +540,16 @@ function fe25519Carry(o: Int64Array): void {
     let c: i64;
 
     for (let i = 0; i < 16; ++i) {
-        let oi = o[i];
-        oi += 1 << 16;
-        c = oi >> 16;
+        o[i] += (1 << 16);
+        c = o[i] >> 16;
         o[(i + 1) * isize(i < 15)] += c - 1 + 37 * (c - 1) * isize(i === 15);
-        o[i] = oi - (c << 16);
+        o[i] -= c << 16;
     }
 }
 
 @inline function fe25519Reduce(o: Int64Array, a: Int64Array): void {
     for (let i = 0; i < 15; ++i) {
-        a[i] += 38 * a[i + 16];
+        a[i] += 38 as i64 * a[i + 16];
     }
     fe25519Copy(o, a);
     fe25519Carry(o);
@@ -735,12 +715,9 @@ function _signKeypairFromSeed(kp: Uint8Array): void {
     scClamp(d);
     scalarmultBase(d, p);
     pack(pk, p);
-
-    memory.copy(
-        changetype<usize>(kp.buffer) + kp.byteOffset + 32,
-        changetype<usize>(pk.buffer),
-        32
-    );
+    for (let i = 0; i < 32; ++i) {
+        kp[i + 32] = pk[i];
+    }
 }
 
 function unpack(r: Int64Array[], p: Uint8Array, neg: bool): bool {
@@ -871,17 +848,12 @@ function _signDetached(sig: Uint8Array, m: Uint8Array, kp: Uint8Array, Z: Uint8A
     _hashFinal(hs, hram, 64 + mlen, r);
     scReduce(hram);
     scClamp(az);
-
-    memory.copy(
-        changetype<usize>(x.buffer),
-        changetype<usize>(nonce.buffer),
-        32 * Int64Array.BYTES_PER_ELEMENT
-    );
-
     for (let i = 0; i < 32; ++i) {
-        let hi = hram[i] as i64;
+        x[i] = nonce[i];
+    }
+    for (let i = 0; i < 32; ++i) {
         for (let j = 0; j < 32; ++j) {
-            x[i + j] += hi * (az[j] as i64);
+            x[i + j] += (hram[i] as i64) * (az[j] as i64);
         }
     }
     scModL(sig.subarray(32), x);
@@ -970,7 +942,9 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  * @param x Array to clear
  */
 @global export function memzero(x: Uint8Array): void {
-    memory.fill(changetype<usize>(x.buffer), 0, x.length);
+    for (let i = 0, j = x.length; i < j; ++i) {
+        x[i] = 0;
+    }
 }
 
 /**
@@ -1034,11 +1008,9 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
         throw new Error('bad seed size');
     }
     let kp = new Uint8Array(SIGN_KEYPAIRBYTES);
-    memory.copy(
-        changetype<usize>(kp.buffer),
-        changetype<usize>(seed.buffer) + seed.byteOffset,
-        32
-    );
+    for (let i = 0; i < 32; ++i) {
+        kp[i] = seed[i];
+    }
     _signKeypairFromSeed(kp);
 
     return kp;
@@ -1052,11 +1024,10 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 @global export function signPublicKey(kp: Uint8Array): Uint8Array {
     const len = SIGN_PUBLICKEYBYTES;
     let pk = new Uint8Array(len);
-    memory.copy(
-        changetype<usize>(pk.buffer),
-        changetype<usize>(kp.buffer) + kp.byteOffset + 32,
-        len
-    );
+
+    for (let i = 0; i < len; ++i) {
+        pk[i] = kp[i + 32];
+    }
     return pk;
 }
 
@@ -1068,11 +1039,10 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 @global export function signSecretKey(kp: Uint8Array): Uint8Array {
     const len = SIGN_SECRETKEYBYTES;
     let sk = new Uint8Array(len);
-    memory.copy(
-        changetype<usize>(sk.buffer),
-        changetype<usize>(kp.buffer) + kp.byteOffset,
-        len
-    );
+
+    for (let i = 0; i < len; ++i) {
+        sk[i] = kp[i];
+    }
     return sk;
 }
 
@@ -1161,11 +1131,9 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     }
     setU8(s_, s);
     scReduce(s_);
-    memory.copy(
-        changetype<usize>(r.buffer),
-        changetype<usize>(s_.buffer),
-        32
-    );
+    for (let i = 0; i < 32; ++i) {
+        r[i] = s_[i];
+    }
     return r;
 }
 
@@ -1182,11 +1150,8 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     setU8(s_, s);
     scSub(t_, s_);
     scReduce(t_);
-    memory.copy(
-        changetype<usize>(t.buffer),
-        changetype<usize>(t_.buffer),
-        32
-    );
+    setU8(t, t_.subarray(0, 32));
+
     return t;
 }
 
@@ -1204,11 +1169,8 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     setU8(s_, s);
     scSub(t_, s_);
     scReduce(t_);
-    memory.copy(
-        changetype<usize>(t.buffer),
-        changetype<usize>(t_.buffer),
-        32
-    );
+    setU8(t, t_.subarray(0, 32));
+
     return t;
 }
 

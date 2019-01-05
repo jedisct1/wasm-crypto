@@ -10,7 +10,7 @@ export { memory };
 
 @inline function setU8(dest: Uint8Array, src: Uint8Array, offset: isize = 0): void {
     let len = src.length;
-    if (dest.length - offset >= len) {
+    if (len > dest.length - offset) {
         throw new Error("Out of bound");
     }
     memory.copy(

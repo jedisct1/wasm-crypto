@@ -255,9 +255,11 @@ function scModL(r: Uint8Array, x: Int64Array): void {
     for (let i = 63; i >= 32; --i) {
         carry = 0;
         let k = i - 12;
+        let xi = x[i];
         for (let j = i - 32; j < k; ++j) {
-            x[j] += carry - 16 * x[i] * _L[j - (i - 32)];
-            carry = (x[j] + 128) >> 8;
+            let xj = x[j];
+            xj += carry - 16 * xi * _L[j - (i - 32)];
+            carry = (xj + 128) >> 8;
             x[j] -= carry * 256;
         }
         x[k] += carry;
@@ -265,16 +267,18 @@ function scModL(r: Uint8Array, x: Int64Array): void {
     }
     carry = 0;
     for (let j = 0; j < 32; ++j) {
-        x[j] += carry - (x[31] >> 4) * _L[j];
-        carry = x[j] >> 8;
-        x[j] &= 255;
+        let xj = x[j];
+        xj += carry - (x[31] >> 4) * _L[j];
+        carry = xj >> 8;
+        x[j] = xj & 255;
     }
     for (let j = 0; j < 32; ++j) {
         x[j] -= carry * _L[j];
     }
     for (let i = 0; i < 32; ++i) {
-        x[i + 1] += x[i] >> 8;
-        r[i] = x[i] as u8;
+        let xi = x[i];
+        x[i + 1] += xi >> 8;
+        r[i] = xi as u8;
     }
 }
 
@@ -484,8 +488,9 @@ function fe25519Pack(o: Uint8Array, n: Int64Array): void {
     for (let j = 0; j < 2; ++j) {
         m[0] = t[0] - 0xffed;
         for (let i = 1; i < 15; ++i) {
-            m[i] = t[i] - 0xffff - ((m[i - 1] >> 16) & 1);
-            m[i - 1] &= 0xffff;
+            let mp = m[i - 1];
+            m[i] = t[i] - 0xffff - ((mp >> 16) & 1);
+            m[i - 1] = mp & 0xffff;
         }
         m[15] = t[15] - 0x7fff - ((m[14] >> 16) & 1);
         b = (m[15] >> 16) & 1;
@@ -539,12 +544,16 @@ function fe25519Unpack(o: Int64Array, n: Uint8Array): void {
 function fe25519Carry(o: Int64Array): void {
     let c: i64;
 
-    for (let i = 0; i < 16; ++i) {
+    for (let i = 0; i < 15; ++i) {
         o[i] += (1 << 16);
         c = o[i] >> 16;
-        o[(i + 1) * isize(i < 15)] += c - 1 + 37 * (c - 1) * isize(i === 15);
+        o[(i + 1)] += c - 1;
         o[i] -= c << 16;
     }
+    o[15] += (1 << 16);
+    c = o[15] >> 16;
+    o[0] += c - 1 + 37 * (c - 1);
+    o[15] -= c << 16;
 }
 
 @inline function fe25519Reduce(o: Int64Array, a: Int64Array): void {

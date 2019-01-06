@@ -6,7 +6,7 @@ import { LOAD, STORE } from 'internal/arraybuffer';
 import { precompBase } from './precomp';
 export { memory };
 
-function setU8(t: Uint8Array, s: Uint8Array, o: isize = 0): void {
+@inline function setU8(t: Uint8Array, s: Uint8Array, o: isize = 0): void {
     for (let i: isize = 0, len = s.length; i < len; ++i) {
         t[i + o] = s[i];
     }

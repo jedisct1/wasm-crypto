@@ -671,20 +671,30 @@ function pack(r: Uint8Array, p: Int64Array[]): void {
 }
 
 function scalarmult(p: Int64Array[], s: Uint8Array, q: Int64Array[]): void {
-    let t = ge25519n(),
-        b: u8;
+    let pc0 = ge25519n(), pc1 = ge25519n(), pc2 = ge25519n(), pc3 = ge25519n(),
+        t = ge25519n(),
+        b: u32;
 
-    fe25519Copy(p[0], fe25519_0);
-    fe25519Copy(p[1], fe25519_1);
-    fe25519Copy(p[2], fe25519_1);
-    fe25519Copy(p[3], fe25519_0);
+    fe25519Copy(pc0[0], fe25519_0);
+    fe25519Copy(pc0[1], fe25519_1);
+    fe25519Copy(pc0[2], fe25519_1);
+    fe25519Copy(pc0[3], fe25519_0);
+    geCopy(pc1, q);
+    geCopy(pc2, pc1);
+    add(pc2, pc2);
+    geCopy(pc3, pc1);
+    add(pc3, pc2);
 
-    for (let i = 0; i <= 255; ++i) {
-        b = (s[(i >>> 3)] >>> (i as u8 & 7)) & 1;
-        geCopy(t, p);
-        add(t, q);
-        cmov(p, t, b);
-        add(q, q);
+    geCopy(p, pc0);
+    for (let i = 254; i >= 0; i -= 2) {
+        b = (s[(i >>> 3)] >>> (i as u8 & 7)) & 3;
+        add(p, p);
+        add(p, p);
+        cmov(t, pc3, ((b - 4) >>> 8) as u8 & 1);
+        cmov(t, pc2, ((b - 3) >>> 8) as u8 & 1);
+        cmov(t, pc1, ((b - 2) >>> 8) as u8 & 1);
+        cmov(t, pc0, ((b - 1) >>> 8) as u8 & 1);
+        add(p, t);
     }
 }
 

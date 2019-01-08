@@ -464,9 +464,22 @@ let I = fe25519([
 ]);
 
 @inline function fe25519Copy(r: Int64Array, a: Int64Array): void {
-    for (let i = 0; i < 16; ++i) {
-        r[i] = a[i];
-    }
+    r[0] = unchecked(a[0]);
+    r[1] = unchecked(a[1]);
+    r[2] = unchecked(a[2]);
+    r[3] = unchecked(a[3]);
+    r[4] = unchecked(a[4]);
+    r[5] = unchecked(a[5]);
+    r[6] = unchecked(a[6]);
+    r[7] = unchecked(a[7]);
+    r[8] = unchecked(a[8]);
+    r[9] = unchecked(a[9]);
+    r[10] = unchecked(a[10]);
+    r[11] = unchecked(a[11]);
+    r[12] = unchecked(a[12]);
+    r[13] = unchecked(a[13]);
+    r[14] = unchecked(a[14]);
+    r[15] = unchecked(a[15]);
 }
 
 @inline function fe25519Cmov(p: Int64Array, q: Int64Array, b: i64): void {

@@ -471,9 +471,22 @@ let I = fe25519([
 
 @inline function fe25519Cmov(p: Int64Array, q: Int64Array, b: i64): void {
     let mask = ~(b - 1);
-    for (let i = 0; i < 16; ++i) {
-        p[i] ^= (p[i] ^ q[i]) & mask;
-    }
+    p[0] ^= (unchecked(p[0]) ^ unchecked(q[0])) & mask;
+    p[1] ^= (unchecked(p[1]) ^ unchecked(q[1])) & mask;
+    p[2] ^= (unchecked(p[2]) ^ unchecked(q[2])) & mask;
+    p[3] ^= (unchecked(p[3]) ^ unchecked(q[3])) & mask;
+    p[4] ^= (unchecked(p[4]) ^ unchecked(q[4])) & mask;
+    p[5] ^= (unchecked(p[5]) ^ unchecked(q[5])) & mask;
+    p[6] ^= (unchecked(p[6]) ^ unchecked(q[6])) & mask;
+    p[7] ^= (unchecked(p[7]) ^ unchecked(q[7])) & mask;
+    p[8] ^= (unchecked(p[8]) ^ unchecked(q[8])) & mask;
+    p[9] ^= (unchecked(p[9]) ^ unchecked(q[9])) & mask;
+    p[10] ^= (unchecked(p[10]) ^ unchecked(q[10])) & mask;
+    p[11] ^= (unchecked(p[11]) ^ unchecked(q[11])) & mask;
+    p[12] ^= (unchecked(p[12]) ^ unchecked(q[12])) & mask;
+    p[13] ^= (unchecked(p[13]) ^ unchecked(q[13])) & mask;
+    p[14] ^= (unchecked(p[14]) ^ unchecked(q[14])) & mask;
+    p[15] ^= (unchecked(p[15]) ^ unchecked(q[15])) & mask;
 }
 
 function fe25519Pack(o: Uint8Array, n: Int64Array): void {

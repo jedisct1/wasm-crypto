@@ -671,29 +671,44 @@ function pack(r: Uint8Array, p: Int64Array[]): void {
 }
 
 function scalarmult(p: Int64Array[], s: Uint8Array, q: Int64Array[]): void {
-    let pc0 = ge25519n(), pc1 = ge25519n(), pc2 = ge25519n(), pc3 = ge25519n(),
-        t = ge25519n(),
+    let pc: Array<Int64Array[]> = [ge25519n(), ge25519n(), ge25519n(), ge25519n(), ge25519n(), ge25519n(), ge25519n(), ge25519n(),
+    ge25519n(), ge25519n(), ge25519n(), ge25519n(), ge25519n(), ge25519n(), ge25519n(), ge25519n()];
+    let t = ge25519n(),
         b: u32;
 
-    fe25519Copy(pc0[0], fe25519_0);
-    fe25519Copy(pc0[1], fe25519_1);
-    fe25519Copy(pc0[2], fe25519_1);
-    fe25519Copy(pc0[3], fe25519_0);
-    geCopy(pc1, q);
-    geCopy(pc2, pc1);
-    add(pc2, pc2);
-    geCopy(pc3, pc1);
-    add(pc3, pc2);
+    fe25519Copy(pc[0][0], fe25519_0);
+    fe25519Copy(pc[0][1], fe25519_1);
+    fe25519Copy(pc[0][2], fe25519_1);
+    fe25519Copy(pc[0][3], fe25519_0);
+    geCopy(pc[1], q);
+    for (let i = 2; i < 16; ++i) {
+        geCopy(pc[i], pc[i - 1]);
+        add(pc[i], q);
+    }
 
-    geCopy(p, pc0);
-    for (let i = 254; i >= 0; i -= 2) {
-        b = (s[(i >>> 3)] >>> (i as u8 & 7)) & 3;
+    geCopy(p, pc[0]);
+    for (let i = 252; i >= 0; i -= 4) {
+        b = (s[(i >>> 3)] >>> (i as u8 & 7)) & 0xf;
         add(p, p);
         add(p, p);
-        cmov(t, pc3, ((b - 4) >>> 8) as u8 & 1);
-        cmov(t, pc2, ((b - 3) >>> 8) as u8 & 1);
-        cmov(t, pc1, ((b - 2) >>> 8) as u8 & 1);
-        cmov(t, pc0, ((b - 1) >>> 8) as u8 & 1);
+        add(p, p);
+        add(p, p);
+        cmov(t, unchecked(pc[15]), ((b - 16) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[14]), ((b - 15) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[13]), ((b - 14) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[12]), ((b - 13) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[11]), ((b - 12) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[10]), ((b - 11) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[9]), ((b - 10) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[8]), ((b - 9) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[7]), ((b - 8) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[6]), ((b - 7) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[5]), ((b - 6) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[4]), ((b - 5) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[3]), ((b - 4) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[2]), ((b - 3) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[1]), ((b - 2) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[0]), ((b - 1) >>> 8) as u8 & 1);
         add(p, t);
     }
 }

@@ -257,18 +257,16 @@ function scModL(r: Uint8Array, x: Int64Array): void {
         let k = i - 12;
         let xi = x[i];
         for (let j = i - 32; j < k; ++j) {
-            let xj = x[j];
-            xj += carry - 16 * xi * _L[j - (i - 32)];
+            let xj = x[j] + carry - 16 * xi * _L[j - (i - 32)];
             carry = (xj + 128) >> 8;
-            x[j] -= carry * 256;
+            x[j] = xj - carry * 256;
         }
         x[k] += carry;
         x[i] = 0;
     }
     carry = 0;
     for (let j = 0; j < 32; ++j) {
-        let xj = x[j];
-        xj += carry - (x[31] >> 4) * _L[j];
+        let xj = x[j] + carry - (x[31] >> 4) * _L[j];
         carry = xj >> 8;
         x[j] = xj & 255;
     }

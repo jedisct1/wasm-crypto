@@ -38,11 +38,11 @@ export { memory };
     return (x & y) ^ (x & z) ^ (y & z);
 }
 
-@inline function load64(x: Uint8Array, offset: isize): u64 {
+function load64(x: Uint8Array, offset: isize): u64 {
     return LOAD<u64>(x.buffer, 0, offset);
 }
 
-@inline function store64(x: Uint8Array, offset: isize, u: u64): void {
+function store64(x: Uint8Array, offset: isize, u: u64): void {
     STORE<u64>(x.buffer, 0, u, offset);
 }
 

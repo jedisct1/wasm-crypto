@@ -755,7 +755,7 @@ function scalarmultBase(s: Uint8Array, p: Int64Array[]): void {
         let precomp = precomp_base[i];
         q[0] = fe25519(precomp[0]);
         q[1] = fe25519(precomp[1]);
-        q[3] = fe25519(precomp[3]);
+        q[3] = fe25519(precomp[2]);
         geCopy(t, p);
         add(t, q);
         cmov(p, t, b);

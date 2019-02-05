@@ -1182,15 +1182,37 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  * @returns `s` reduced mod `L`
  */
 @global export function faScalarReduce(s: Uint8Array): Uint8Array {
-    let r = new Uint8Array(32);
     let s_ = new Uint8Array(64);
     if (s_.length < 32 || s_.length > 64) {
-        throw new Error('faScalarReduce() argument should be between 40 and 64 bytes long');
+        throw new Error('faScalarReduce() argument should be between 32 and 64 bytes long');
     }
     setU8(s_, s);
     scReduce(s_);
+    let r = new Uint8Array(32);
     for (let i = 0; i < 32; ++i) {
         r[i] = s_[i];
+    }
+    return r;
+}
+
+/**
+ * Multiply `s` by the group cofactor
+ *
+ * @param s Scalar (32 bytes)
+ * @returns `s * 8`
+ */
+@global export function faScalarCofactorMult(s: Uint8Array): Uint8Array {
+    if (s.length !== 32) {
+        throw new Error('faScalarCofactorMult() argument should be 32 bytes long');
+    }
+    if ((s[31] & 224) !== 0) {
+        throw new Error("faScalarCofactorMult() would overflow");
+    }
+    let r = new Uint8Array(32), t: u8 = 0;
+    for (let i = 0; i < 32; i++) {
+        let si = s[i];
+        r[i] = (si << 3) | t;
+        t = (si >>> 5);
     }
     return r;
 }

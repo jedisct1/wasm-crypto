@@ -1,5 +1,4 @@
-![wasm-crypto](https://raw.github.com/jedisct1/wasm-crypto/master/logo.png)
-==============
+# ![wasm-crypto](https://raw.github.com/jedisct1/wasm-crypto/master/logo.png)
 
 A WebAssembly (via AssemblyScript) set of cryptographic primitives for building authentication and key exchange protocols.
 
@@ -12,3 +11,9 @@ Currently provides:
 - Point validation, point addition, scalar multiplication with and without clamping over Curve25519 using the standard Ed25519 point encoding.
 - Fast point validation, hash-to-point, point addition, scalar multiplication over the [Ristretto](https://ristretto.group) prime-order group.
 - Scalar reduction, scalar multiplication, scalar inversion mod the order of the prime-order groups for multiparty computation and oblivious pseudorandom functions.
+
+## Javascript (TypeScript) bindings
+
+WASM-Crypto currently lacks a nice set of Javascript wrappers.
+
+This is fairly easy (see the [Terrarium access control example](https://github.com/jedisct1/fastly-terrarium-examples/tree/master/access_control_example) for an example), so if you think you can help, please do!

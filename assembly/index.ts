@@ -1282,12 +1282,34 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 }
 
 /**
+ * Compute `x * y (mod L)`
+ * @param x Scalar
+ * @param y Scalar
+ * @returns `x * y (mod L)`
+ */
+@global export function faScalarMult(x: Uint8Array, y: Uint8Array): Uint8Array {
+    let x_ = new Int64Array(64), y_ = new Int64Array(64);
+    let o = new Int64Array(64), o_ = new Uint8Array(32);
+    for (let i = 0; i < 32; i++) {
+        x_[i] = x[i] as i64;
+    }
+    for (let i = 0; i < 32; i++) {
+        y_[i] = y[i] as i64;
+    }
+    scMult(o, x_, y_);
+    for (let i = 0; i < 32; i++) {
+        o_[i] = o[i] as u8;
+    }
+    return o_;
+}
+
+/**
  * Multiply a point `q` by a scalar `s`
  * @param q Compressed EC point
  * @param s Scalar
  * @returns Compressed EC point `q * s`
  */
-@global export function faScalarMult(s: Uint8Array, q: Uint8Array): Uint8Array {
+@global export function faPointMult(s: Uint8Array, q: Uint8Array): Uint8Array {
     let p_ = ge25519n();
     let q_ = ge25519n();
     if (!unpack(q_, q, false) || !faPointValidate(q)) {
@@ -1308,7 +1330,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  * @param s Scalar
  * @returns Compressed EC point `q * clamp(s)`
  */
-@global export function faScalarMultClamp(s: Uint8Array, q: Uint8Array): Uint8Array {
+@global export function faPointMultClamp(s: Uint8Array, q: Uint8Array): Uint8Array {
     let s_ = new Uint8Array(32);
     setU8(s_, s);
     scClamp(s_);
@@ -1321,7 +1343,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  * @param s Scalar
  * @returns Compressed EC point `B * s`
  */
-@global export function faScalarBase(s: Uint8Array): Uint8Array {
+@global export function faBasePointMult(s: Uint8Array): Uint8Array {
     if (allZeros(s)) {
         return null;
     }
@@ -1338,12 +1360,12 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  * @param s Scalar
  * @returns Compressed EC point `B * clamp(s)`
  */
-@global export function faScalarBaseClamp(s: Uint8Array): Uint8Array {
+@global export function faBasePointMultClamp(s: Uint8Array): Uint8Array {
     let s_ = new Uint8Array(32);
     setU8(s_, s);
     scClamp(s_);
 
-    return faScalarBase(s);
+    return faBasePointMult(s);
 }
 
 /**

@@ -872,12 +872,10 @@ function isCanonical(s: Uint8Array): bool {
     return !(c & d & 1);
 }
 
-// Ristretto
-
 function ristrettoSqrtRatioM1(x: Int64Array, u: Int64Array, v: Int64Array): bool {
     let v3 = fe25519n(), vxx = fe25519n(),
         m_root_check = fe25519n(), p_root_check = fe25519n(), f_root_check = fe25519n(),
-        negx = fe25519n(), x_sqrtm1 = fe25519n();
+        x_sqrtm1 = fe25519n();
     fe25519Sq(v3, v);
     fe25519Mult(v3, v3, v);
     fe25519Sq(x, v3);

@@ -568,7 +568,7 @@ function fe25519Cneg(h: Int64Array, f: Int64Array, b: bool): void {
     let negf = fe25519n();
     fe25519Sub(negf, fe25519_0, f);
     fe25519Copy(h, f);
-    fe25519Cmov(h, negf, b as u8);
+    fe25519Cmov(h, negf, b as i64);
 }
 
 function fe25519Abs(h: Int64Array, f: Int64Array): void {
@@ -710,10 +710,11 @@ function add(p: Int64Array[], q: Int64Array[]): void {
 }
 
 @inline function cmov(p: Int64Array[], q: Int64Array[], b: u8): void {
-    fe25519Cmov(p[0], q[0], b);
-    fe25519Cmov(p[1], q[1], b);
-    fe25519Cmov(p[2], q[2], b);
-    fe25519Cmov(p[3], q[3], b);
+    let b_ = b as i64;
+    fe25519Cmov(p[0], q[0], b_);
+    fe25519Cmov(p[1], q[1], b_);
+    fe25519Cmov(p[2], q[2], b_);
+    fe25519Cmov(p[3], q[3], b_);
 }
 
 function pack(r: Uint8Array, p: Int64Array[]): void {

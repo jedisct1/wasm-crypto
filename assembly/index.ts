@@ -959,7 +959,7 @@ function ristrettoUnpack(h: Int64Array[], s: Uint8Array, neg: bool = false): boo
     }
     fe25519Mult(t, x, y);
 
-    return !(((!was_square) | fe25519IsNegative(t) | fe25519IsZero(y)) as bool);
+    return !(((!was_square) | (fe25519IsNegative(t) ^ neg) | fe25519IsZero(y)) as bool);
 }
 
 function ristrettoPack(s: Uint8Array, h: Int64Array[]): void {
@@ -1015,6 +1015,59 @@ function ristrettoIsIdentity(s: Uint8Array): bool {
         c |= s[i];
     }
     return c === 0;
+}
+
+function ristrettoElligator(p: Int64Array[], t: Int64Array): void {
+    let c = fe25519n(), n = fe25519n(), r = fe25519n(), rpd = fe25519n(),
+        s = fe25519n(), s_prime = fe25519n(), ss = fe25519n(),
+        u = fe25519n(), v = fe25519n(),
+        w0 = fe25519n(), w1 = fe25519n(), w2 = fe25519n(), w3 = fe25519n();
+
+    fe25519Sq(r, t);
+    fe25519Mult(r, SQRTM1, r);
+    fe25519Add(u, r, fe25519_1);
+    fe25519Mult(u, u, ONEMSQD);
+    fe25519Sub(c, fe25519_0, fe25519_1);
+    fe25519Add(rpd, r, D);
+    fe25519Mult(v, r, D);
+    fe25519Sub(v, c, v);
+    fe25519Mult(v, v, rpd);
+
+    let wasnt_square = 1 - (ristrettoSqrtRatioM1(s, u, v) as u8);
+    fe25519Mult(s_prime, s, t);
+    fe25519Abs(s_prime, s_prime);
+    fe25519Sub(s_prime, fe25519_0, s_prime);
+    fe25519Cmov(s, s_prime, wasnt_square);
+    fe25519Cmov(c, r, wasnt_square);
+
+    fe25519Sub(n, r, fe25519_1);
+    fe25519Mult(n, n, c);
+    fe25519Mult(n, n, SQDMONE);
+    fe25519Sub(n, n, v);
+
+    fe25519Add(w0, s, s);
+    fe25519Mult(w0, w0, v);
+    fe25519Mult(w1, n, SQRTADM1);
+    fe25519Sq(ss, s);
+    fe25519Sub(w2, fe25519_1, ss);
+    fe25519Add(w3, fe25519_1, ss);
+
+    fe25519Mult(p[0], w0, w3);
+    fe25519Mult(p[1], w2, w1);
+    fe25519Mult(p[2], w1, w3);
+    fe25519Mult(p[3], w0, w2);
+}
+
+function ristrettoFromUniform(s: Uint8Array, r: Uint8Array): void {
+    let r0 = fe25519n(), r1 = fe25519n();
+    let p0 = ge25519n(), p1 = ge25519n();
+
+    fe25519Unpack(r0, r.subarray(0, 32));
+    fe25519Unpack(r1, r.subarray(32, 64));
+    ristrettoElligator(p0, r0);
+    ristrettoElligator(p1, r1);
+    add(p0, p1);
+    ristrettoPack(s, p0);
 }
 
 // Ed25519
@@ -1605,7 +1658,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 
 /**
  * Multiply a point `q` by a scalar `s`
- * @param q Compressed EC point
+ * @param q Ristretto-compressed EC point
  * @param s Scalar
  * @returns Compressed EC point `q * s`
  */
@@ -1627,7 +1680,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 /**
  * Multiply the base point by a scalar `s`
  * @param s Scalar
- * @returns Compressed EC point `B * s`
+ * @returns Ristretto-compressed EC point `B * s`
  */
 @global export function faBasePointMult(s: Uint8Array): Uint8Array {
     if (allZeros(s)) {
@@ -1643,19 +1696,19 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 
 /**
  * Verify that the point is on the main subgroup
- * @param q Compressed EC point
+ * @param q Ristretto-compressed EC point
  * @returns `true` if verification succeeds
  */
 @global export function faPointValidate(q: Uint8Array): bool {
     let q_ = ge25519n();
 
-    return ristrettoUnpack(q_, q);
+    return (!allZeros(q)) & ristrettoUnpack(q_, q);
 }
 
 /**
  * Point addition
- * @param p Compressed EC point
- * @param q Compressed EC point
+ * @param p Risterto-compressed EC point
+ * @param q Risterto-compressed EC point
  * @returns `p` + `q`
  */
 @global export function faPointAdd(p: Uint8Array, q: Uint8Array): Uint8Array {
@@ -1673,8 +1726,8 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 
 /**
  * Point substraction
- * @param p Compressed EC point
- * @param q Compressed EC point
+ * @param p Ristretto-compressed EC point
+ * @param q Ristretto-compressed EC point
  * @returns `p` - `q`
  */
 @global export function faPointSub(p: Uint8Array, q: Uint8Array): Uint8Array {
@@ -1688,4 +1741,17 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     ristrettoPack(o, p_);
 
     return o;
+}
+
+/**
+ * Hash-to-point
+ * @param r 512 bit hash
+ * @returns Ristretto-compressed EC point
+ */
+@global export function faPointFromUniform(r: Uint8Array): Uint8Array {
+    let p = new Uint8Array(32);
+
+    ristrettoFromUniform(p, r);
+
+    return p;
 }

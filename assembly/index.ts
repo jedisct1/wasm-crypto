@@ -958,7 +958,7 @@ function ristrettoUnpack(h: Int64Array[], s: Uint8Array, neg: bool = false): boo
     }
     fe25519Mult(t, x, y);
 
-    return !(((!was_square) | (fe25519IsNegative(t) ^ neg) | fe25519IsZero(y)) as bool);
+    return !((!was_square) | (fe25519IsNegative(t) ^ neg) | fe25519IsZero(y));
 }
 
 function ristrettoPack(s: Uint8Array, h: Int64Array[]): void {

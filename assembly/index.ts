@@ -771,7 +771,7 @@ function scalarmult(p: Int64Array[], s: Uint8Array, q: Int64Array[]): void {
     }
 }
 
-function scalarmultBase(s: Uint8Array, p: Int64Array[]): void {
+function scalarmultBase(p: Int64Array[], s: Uint8Array): void {
     let q = ge25519n(),
         t = ge25519n(),
         b: u8;
@@ -796,21 +796,7 @@ function scalarmultBase(s: Uint8Array, p: Int64Array[]): void {
     }
 }
 
-// EdDSA
-
-function _signKeypairFromSeed(kp: Uint8Array): void {
-    let pk = new Uint8Array(32);
-    let d = new Uint8Array(64);
-    let p = ge25519n();
-
-    _hash(d, kp, 32);
-    scClamp(d);
-    scalarmultBase(d, p);
-    pack(pk, p);
-    for (let i = 0; i < 32; ++i) {
-        kp[i + 32] = pk[i];
-    }
-}
+// Ed25519 encoding
 
 function unpack(r: Int64Array[], p: Uint8Array, neg: bool = false): bool {
     let t = fe25519n(),
@@ -872,6 +858,8 @@ function isCanonical(s: Uint8Array): bool {
 
     return !(c & d & 1);
 }
+
+// Ristretto encoding
 
 function ristrettoSqrtRatioM1(x: Int64Array, u: Int64Array, v: Int64Array): bool {
     let v3 = fe25519n(), vxx = fe25519n(),
@@ -1069,12 +1057,7 @@ function ristrettoFromUniform(s: Uint8Array, r: Uint8Array): void {
     ristrettoPack(s, p0);
 }
 
-// Ed25519
-
-let B = new Uint8Array(32);
-for (let i = 0; i < 32; ++i) {
-    B[i] = 0x66;
-}
+// Common functions used for signatures
 
 function _signSyntheticRHv(hs: Uint8Array, r: isize, Z: Uint8Array, sk: Uint8Array): isize {
     let zeros = new Uint8Array(128);
@@ -1099,6 +1082,101 @@ function _signSyntheticRHv(hs: Uint8Array, r: isize, Z: Uint8Array, sk: Uint8Arr
     return r;
 }
 
+let B = new Uint8Array(32);
+for (let i = 0; i < 32; ++i) {
+    B[i] = 0x66;
+}
+
+// Ed25519
+
+function _signEdKeypairFromSeed(kp: Uint8Array): void {
+    let d = new Uint8Array(64);
+    let p = ge25519n();
+
+    _hash(d, kp, 32);
+    scClamp(d);
+    scalarmultBase(p, d);
+    pack(kp.subarray(32), p);
+}
+
+function _signEdDetached(sig: Uint8Array, m: Uint8Array, kp: Uint8Array, Z: Uint8Array): void {
+    let R = ge25519n();
+    let az = new Uint8Array(64);
+    let nonce = new Uint8Array(64);
+    let hram = new Uint8Array(64);
+    let x = new Int64Array(64);
+    let mlen = m.length;
+    let hs = _hashInit();
+    let r: isize = 0;
+
+    _hash(az, kp, 32);
+    if (Z.length > 0) {
+        r = _signSyntheticRHv(hs, r, Z, az);
+    } else {
+        r = _hashUpdate(hs, az.subarray(32), 32, r);
+    }
+    r = _hashUpdate(hs, m, mlen, r);
+    _hashFinal(hs, nonce, 32 + mlen, r);
+    setU8(sig, kp.subarray(32), 32);
+
+    scReduce(nonce);
+    scalarmultBase(R, nonce);
+    pack(sig, R);
+
+    hs = _hashInit();
+    r = _hashUpdate(hs, sig, 64, 0);
+    r = _hashUpdate(hs, m, mlen, r);
+    _hashFinal(hs, hram, 64 + mlen, r);
+    scReduce(hram);
+    scClamp(az);
+    for (let i = 0; i < 32; ++i) {
+        x[i] = nonce[i];
+    }
+    for (let i = 0; i < 32; ++i) {
+        for (let j = 0; j < 32; ++j) {
+            x[i + j] += (hram[i] as i64) * (az[j] as i64);
+        }
+    }
+    scModL(sig.subarray(32), x);
+}
+
+function _signEdVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bool {
+    if (!isCanonical(pk) || isIdentity(pk) || !isCanonical(sig.subarray(32))) {
+        return false;
+    }
+    let A = ge25519n();
+    if (!unpack(A, pk, true)) {
+        return false;
+    }
+    let h = new Uint8Array(64);
+    let hs = _hashInit();
+    let r = _hashUpdate(hs, sig, 32, 0);
+    r = _hashUpdate(hs, pk, 32, r);
+    r = _hashUpdate(hs, m, m.length, r);
+    _hashFinal(hs, h, 32 + 32 + m.length, r);
+    scReduce(h);
+
+    let R = ge25519n();
+    let rcheck = new Uint8Array(32);
+    scalarmult(R, h, A);
+    scalarmultBase(A, sig.subarray(32));
+    add(R, A);
+    pack(rcheck, R);
+
+    return verify32(rcheck, sig.subarray(0, 32));
+}
+
+// Signatures over Ristretto
+
+function _signKeypairFromSeed(kp: Uint8Array): void {
+    let d = new Uint8Array(64);
+    let p = ge25519n();
+
+    _hash(d, kp, 32);
+    scalarmultBase(p, d);
+    ristrettoPack(kp.subarray(32), p);
+}
+
 function _signDetached(sig: Uint8Array, m: Uint8Array, kp: Uint8Array, Z: Uint8Array): void {
     let R = ge25519n();
     let az = new Uint8Array(64);
@@ -1120,15 +1198,14 @@ function _signDetached(sig: Uint8Array, m: Uint8Array, kp: Uint8Array, Z: Uint8A
     setU8(sig, kp.subarray(32), 32);
 
     scReduce(nonce);
-    scalarmultBase(nonce, R);
-    pack(sig, R);
+    scalarmultBase(R, nonce);
+    ristrettoPack(sig, R);
 
     hs = _hashInit();
     r = _hashUpdate(hs, sig, 64, 0);
     r = _hashUpdate(hs, m, mlen, r);
     _hashFinal(hs, hram, 64 + mlen, r);
     scReduce(hram);
-    scClamp(az);
     for (let i = 0; i < 32; ++i) {
         x[i] = nonce[i];
     }
@@ -1141,11 +1218,8 @@ function _signDetached(sig: Uint8Array, m: Uint8Array, kp: Uint8Array, Z: Uint8A
 }
 
 function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bool {
-    if (!isCanonical(pk) || isIdentity(pk) || !isCanonical(sig.subarray(32))) {
-        return false;
-    }
     let A = ge25519n();
-    if (!unpack(A, pk, true)) {
+    if (!ristrettoUnpack(A, pk, true)) {
         return false;
     }
     let h = new Uint8Array(64);
@@ -1159,9 +1233,10 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     let R = ge25519n();
     let rcheck = new Uint8Array(32);
     scalarmult(R, h, A);
-    scalarmultBase(sig.subarray(32), A);
+    scalarmultBase(A, sig.subarray(32));
     add(R, A);
-    pack(rcheck, R);
+
+    ristrettoPack(rcheck, R);
 
     return verify32(rcheck, sig.subarray(0, 32));
 }
@@ -1197,6 +1272,36 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  * Recommended random bytes size, in bytes
  */
 @global export const SIGN_RANDBYTES: isize = 32;
+
+/**
+ * Ed25519 signature size, in bytes
+ */
+@global export const SIGN_ED_BYTES: isize = 64;
+
+/**
+ * Ed25519 ublic key size, in bytes
+ */
+@global export const SIGN_ED_PUBLICKEYBYTES: isize = 32;
+
+/**
+ * Ed25519 secret key size, in bytes
+ */
+@global export const SIGN_ED_SECRETKEYBYTES: isize = 32;
+
+/**
+ * Ed25519 key pair size, in bytes
+ */
+@global export const SIGN_ED_KEYPAIRBYTES: isize = 64;
+
+/**
+ * Ed25519 seed size, in bytes
+ */
+@global export const SIGN_ED_SEEDBYTES: isize = 32;
+
+/**
+ * Non-deterministic Ed25519 recommended random bytes size, in bytes
+ */
+@global export const SIGN_ED_RANDBYTES: isize = 32;
 
 /**
  * Hash function output size, in bytes
@@ -1319,6 +1424,86 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
  */
 @global export function signSecretKey(kp: Uint8Array): Uint8Array {
     const len = SIGN_SECRETKEYBYTES;
+    let sk = new Uint8Array(len);
+
+    for (let i = 0; i < len; ++i) {
+        sk[i] = kp[i];
+    }
+    return sk;
+}
+
+/**
+ * Sign a message using Ed25519 and returns its signature.
+ * @param m Message to sign
+ * @param kp Key pair (`SIGN_ED_KEYPAIRBYTES` long)
+ * @param Z Random bytes. This can be an empty array to produce deterministic
+ *     signatures
+ * @returns Signature
+ */
+@global export function signEd(m: Uint8Array, kp: Uint8Array, Z: Uint8Array): Uint8Array {
+    let sig = new Uint8Array(SIGN_ED_BYTES);
+    _signEdDetached(sig, m, kp, Z);
+
+    return sig;
+}
+
+/**
+ * Verify a signature using Ed25519
+ * @param m Message
+ * @param sig Signature
+ * @param pk Public key
+ * @returns `true` on success
+ */
+@global export function signEdVerify(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bool {
+    if (sig.length !== SIGN_ED_BYTES) {
+        throw new Error('bad signature size');
+    }
+    if (pk.length !== SIGN_ED_PUBLICKEYBYTES) {
+        throw new Error('bad public key size');
+    }
+    return _signEdVerifyDetached(sig, m, pk);
+}
+
+/**
+ * Create a new Ed25519 key pair from a seed
+ * @param seed Seed (`SIGN_ED_SEEDBYTES` long)
+ * @returns Key pair
+ */
+@global export function signEdKeypairFromSeed(seed: Uint8Array): Uint8Array {
+    if (seed.length !== SIGN_ED_SEEDBYTES) {
+        throw new Error('bad seed size');
+    }
+    let kp = new Uint8Array(SIGN_ED_KEYPAIRBYTES);
+    for (let i = 0; i < 32; ++i) {
+        kp[i] = seed[i];
+    }
+    _signEdKeypairFromSeed(kp);
+
+    return kp;
+}
+
+/**
+ * Return the public key from an Ed25519 key pair
+ * @param kp Key pair
+ * @returns Public key
+ */
+@global export function signEdPublicKey(kp: Uint8Array): Uint8Array {
+    const len = SIGN_ED_PUBLICKEYBYTES;
+    let pk = new Uint8Array(len);
+
+    for (let i = 0; i < len; ++i) {
+        pk[i] = kp[i + 32];
+    }
+    return pk;
+}
+
+/**
+ * Return the secret key from an Ed25519ED_ key pair
+ * @param kp Key pair
+ * @returns Secret key
+ */
+@global export function signEdSecretKey(kp: Uint8Array): Uint8Array {
+    const len = SIGN_ED_SECRETKEYBYTES;
     let sk = new Uint8Array(len);
 
     for (let i = 0; i < len; ++i) {
@@ -1558,7 +1743,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     }
     let p = new Uint8Array(32);
     let p_ = ge25519n();
-    scalarmultBase(s, p_);
+    scalarmultBase(p_, s);
     pack(p, p_);
 
     return p;
@@ -1687,7 +1872,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
     }
     let p = new Uint8Array(32);
     let p_ = ge25519n();
-    scalarmultBase(s, p_);
+    scalarmultBase(p_, s);
     ristrettoPack(p, p_);
 
     return p;

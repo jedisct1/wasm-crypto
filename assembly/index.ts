@@ -1279,7 +1279,7 @@ function _signVerifyDetached(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bo
 @global export const SIGN_ED_BYTES: isize = 64;
 
 /**
- * Ed25519 ublic key size, in bytes
+ * Ed25519 public key size, in bytes
  */
 @global export const SIGN_ED_PUBLICKEYBYTES: isize = 32;
 

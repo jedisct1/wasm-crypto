@@ -659,12 +659,18 @@ function fe25519Inverse(o: Fe25519, i: Fe25519): void {
     let c = newFe25519();
 
     fe25519Copy(c, i);
-    for (let a = 253; a >= 0; --a) {
+    for (let a = 253; a >= 5; --a) {
         fe25519Sq(c, c);
-        if (a !== 2 && a !== 4) {
-            fe25519Mult(c, c, i);
-        }
+        fe25519Mult(c, c, i);
     }
+    fe25519Sq(c, c);
+    fe25519Sq(c, c);
+    fe25519Mult(c, c, i);
+    fe25519Sq(c, c);
+    fe25519Sq(c, c);
+    fe25519Mult(c, c, i);
+    fe25519Sq(c, c);
+    fe25519Mult(c, c, i);
     fe25519Copy(o, c);
 }
 

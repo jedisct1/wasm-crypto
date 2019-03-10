@@ -672,12 +672,13 @@ function fe25519Pow2523(o: Fe25519, i: Fe25519): void {
     let c = newFe25519();
 
     fe25519Copy(c, i);
-    for (let a = 250; a >= 0; --a) {
+    for (let a = 250; a >= 2; --a) {
         fe25519Sq(c, c);
-        if (a !== 1) {
-            fe25519Mult(c, c, i);
-        }
+        fe25519Mult(c, c, i);
     }
+    fe25519Sq(c, c);
+    fe25519Sq(c, c);
+    fe25519Mult(c, c, i);
     fe25519Copy(o, c);
 }
 

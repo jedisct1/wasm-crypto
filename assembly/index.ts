@@ -684,7 +684,7 @@ function fe25519Pow2523(o: Fe25519, i: Fe25519): void {
 // Ed25519 group arithmetic
 
 @sealed @unmanaged
-class GE {
+class Ge {
     x: Fe25519;
     y: Fe25519;
     z: Fe25519;
@@ -700,22 +700,22 @@ class GE {
 
 type GePacked = Uint8Array(32);
 
-@inline function newGE(): GE {
-    return new GE();
+@inline function newGe(): Ge {
+    return new Ge();
 }
 
 @inline function newGePacked(): GePacked {
     return new Uint8Array(32);
 }
 
-@inline function geCopy(r: GE, a: GE): void {
+@inline function geCopy(r: Ge, a: Ge): void {
     fe25519Copy(r.x, a.x);
     fe25519Copy(r.y, a.y);
     fe25519Copy(r.z, a.z);
     fe25519Copy(r.t, a.t);
 }
 
-function add(p: GE, q: GE): void {
+function add(p: Ge, q: Ge): void {
     let a = newFe25519(),
         b = newFe25519(),
         c = newFe25519(),
@@ -747,14 +747,14 @@ function add(p: GE, q: GE): void {
     fe25519Mult(p.t, e, h);
 }
 
-@inline function cmov(p: GE, q: GE, b: i64): void {
+@inline function cmov(p: Ge, q: Ge, b: i64): void {
     fe25519Cmov(p.x, q.x, b);
     fe25519Cmov(p.y, q.y, b);
     fe25519Cmov(p.z, q.z, b);
     fe25519Cmov(p.t, q.t, b);
 }
 
-function pack(r: GePacked, p: GE): void {
+function pack(r: GePacked, p: Ge): void {
     let tx = newFe25519(),
         ty = newFe25519(),
         zi = newFe25519();
@@ -765,10 +765,10 @@ function pack(r: GePacked, p: GE): void {
     r[31] ^= (fe25519IsNegative(tx) as u8) << 7;
 }
 
-function scalarmult(p: GE, s: ScalarPacked, q: GE): void {
-    let pc: Array<GE> = [newGE(), newGE(), newGE(), newGE(), newGE(), newGE(), newGE(), newGE(),
-    newGE(), newGE(), newGE(), newGE(), newGE(), newGE(), newGE(), newGE()];
-    let t = newGE(),
+function scalarmult(p: Ge, s: ScalarPacked, q: Ge): void {
+    let pc: Array<Ge> = [newGe(), newGe(), newGe(), newGe(), newGe(), newGe(), newGe(), newGe(),
+    newGe(), newGe(), newGe(), newGe(), newGe(), newGe(), newGe(), newGe()];
+    let t = newGe(),
         b: u32;
 
     fe25519Copy(pc[0].x, fe25519_0);
@@ -808,9 +808,9 @@ function scalarmult(p: GE, s: ScalarPacked, q: GE): void {
     }
 }
 
-function scalarmultBase(p: GE, s: ScalarPacked): void {
-    let q = newGE(),
-        t = newGE(),
+function scalarmultBase(p: Ge, s: ScalarPacked): void {
+    let q = newGe(),
+        t = newGe(),
         b: u8;
 
     fe25519Copy(p.x, fe25519_0);
@@ -835,7 +835,7 @@ function scalarmultBase(p: GE, s: ScalarPacked): void {
 
 // Ed25519 encoding
 
-function unpack(r: GE, p: GePacked, neg: bool = false): bool {
+function unpack(r: Ge, p: GePacked, neg: bool = false): bool {
     let t = newFe25519(),
         chk = newFe25519(),
         num = newFe25519(),
@@ -940,7 +940,7 @@ function ristrettoIsCanonical(s: GePacked): bool {
     return (1 - (((c & d) | s[0]) & 1)) as bool;
 }
 
-function ristrettoUnpack(h: GE, s: GePacked, neg: bool = false): bool {
+function ristrettoUnpack(h: Ge, s: GePacked, neg: bool = false): bool {
     let inv_sqrt = newFe25519(), s_ = newFe25519(), ss = newFe25519(),
         u1 = newFe25519(), u2 = newFe25519(), u1u1 = newFe25519(), u2u2 = newFe25519(),
         v = newFe25519(), v_u2u2 = newFe25519();
@@ -986,7 +986,7 @@ function ristrettoUnpack(h: GE, s: GePacked, neg: bool = false): bool {
     return !((!was_square) | (fe25519IsNegative(t) ^ neg) | fe25519IsZero(y));
 }
 
-function ristrettoPack(s: GePacked, h: GE): void {
+function ristrettoPack(s: GePacked, h: Ge): void {
     let den1 = newFe25519(), den2 = newFe25519(), den_inv = newFe25519(), eden = newFe25519(),
         inv_sqrt = newFe25519(), ix = newFe25519(), iy = newFe25519(), s_ = newFe25519(),
         t_z_inv = newFe25519(), u1 = newFe25519(), u2 = newFe25519(), u1_u2u2 = newFe25519(),
@@ -1041,7 +1041,7 @@ function ristrettoIsIdentity(s: GePacked): bool {
     return c === 0;
 }
 
-function ristrettoElligator(p: GE, t: Fe25519): void {
+function ristrettoElligator(p: Ge, t: Fe25519): void {
     let c = newFe25519(), n = newFe25519(), r = newFe25519(), rpd = newFe25519(),
         s = newFe25519(), s_prime = newFe25519(), ss = newFe25519(),
         u = newFe25519(), v = newFe25519(),
@@ -1086,7 +1086,7 @@ type Uniform = Uint8Array(64);
 
 function ristrettoFromUniform(s: GePacked, r: Uniform): void {
     let r0 = newFe25519(), r1 = newFe25519();
-    let p0 = newGE(), p1 = newGE();
+    let p0 = newGe(), p1 = newGe();
 
     fe25519Unpack(r0, r.subarray(0, 32));
     fe25519Unpack(r1, r.subarray(32, 64));
@@ -1133,7 +1133,7 @@ type Signature = Uint8Array(64);
 
 function _signEdKeypairFromSeed(kp: KeyPair): void {
     let d = new Uint8Array(64);
-    let p = newGE();
+    let p = newGe();
 
     _hash(d, kp, 32);
     scClamp(d);
@@ -1142,7 +1142,7 @@ function _signEdKeypairFromSeed(kp: KeyPair): void {
 }
 
 function _signEdDetached(sig: Signature, m: Uint8Array, kp: KeyPair, Z: Uint8Array): void {
-    let R = newGE();
+    let R = newGe();
     let az = new Uint8Array(64);
     let nonce = new Uint8Array(64);
     let hram = new Uint8Array(64);
@@ -1186,7 +1186,7 @@ function _signEdVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): boo
     if (!isCanonical(pk) || isIdentity(pk) || !isCanonical(sig.subarray(32))) {
         return false;
     }
-    let A = newGE();
+    let A = newGe();
     if (!unpack(A, pk, true)) {
         return false;
     }
@@ -1198,7 +1198,7 @@ function _signEdVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): boo
     _hashFinal(hs, h, 32 + 32 + m.length, r);
     scReduce(h);
 
-    let R = newGE();
+    let R = newGe();
     let rcheck = newFe25519Packed();
     scalarmult(R, h, A);
     scalarmultBase(A, sig.subarray(32));
@@ -1212,7 +1212,7 @@ function _signEdVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): boo
 
 function _signKeypairFromSeed(kp: KeyPair): void {
     let d = new Uint8Array(64);
-    let p = newGE();
+    let p = newGe();
 
     _hash(d, kp, 32);
     scalarmultBase(p, d);
@@ -1220,7 +1220,7 @@ function _signKeypairFromSeed(kp: KeyPair): void {
 }
 
 function _signDetached(sig: Signature, m: Uint8Array, kp: KeyPair, Z: Uint8Array): void {
-    let R = newGE();
+    let R = newGe();
     let az = new Uint8Array(64);
     let nonce = new Uint8Array(64);
     let hram = new Uint8Array(64);
@@ -1260,7 +1260,7 @@ function _signDetached(sig: Signature, m: Uint8Array, kp: KeyPair, Z: Uint8Array
 }
 
 function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool {
-    let A = newGE();
+    let A = newGe();
     if (!ristrettoUnpack(A, pk, true)) {
         return false;
     }
@@ -1272,7 +1272,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
     _hashFinal(hs, h, 32 + 32 + m.length, r);
     scReduce(h);
 
-    let R = newGE();
+    let R = newGe();
     let rcheck = newFe25519Packed();
     scalarmult(R, h, A);
     scalarmultBase(A, sig.subarray(32));
@@ -1762,8 +1762,8 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns Compressed EC point `q * s`
  */
 @global export function faEdPointMult(s: Uint8Array, q: Uint8Array): Uint8Array | null {
-    let p_ = newGE();
-    let q_ = newGE();
+    let p_ = newGe();
+    let q_ = newGe();
     if (!unpack(q_, q, false) || !faEdPointValidate(q)) {
         return null;
     }
@@ -1786,7 +1786,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
         return null;
     }
     let p = newGePacked();
-    let p_ = newGE();
+    let p_ = newGe();
     scalarmultBase(p_, s);
     pack(p, p_);
 
@@ -1827,8 +1827,8 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  */
 @global export function faEdPointValidate(q: Uint8Array): bool {
     let l = newGePacked();
-    let p_ = newGE();
-    let q_ = newGE();
+    let p_ = newGe();
+    let q_ = newGe();
 
     for (let i = 0; i < 32; ++i) {
         l[i] = _L[i] as u8;
@@ -1854,8 +1854,8 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  */
 @global export function faEdPointAdd(p: Uint8Array, q: Uint8Array): Uint8Array | null {
     let o = newGePacked();
-    let p_ = newGE();
-    let q_ = newGE();
+    let p_ = newGe();
+    let q_ = newGe();
     if (!unpack(p_, p, false) || !unpack(q_, q, false)) {
         return null;
     }
@@ -1873,8 +1873,8 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  */
 @global export function faEdPointSub(p: Uint8Array, q: Uint8Array): Uint8Array | null {
     let o = newGePacked();
-    let p_ = newGE();
-    let q_ = newGE();
+    let p_ = newGe();
+    let q_ = newGe();
     if (!unpack(p_, p, false) || !unpack(q_, q, true)) {
         return null;
     }
@@ -1891,8 +1891,8 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns Compressed EC point `q * s`
  */
 @global export function faPointMult(s: Uint8Array, q: Uint8Array): Uint8Array | null {
-    let p_ = newGE();
-    let q_ = newGE();
+    let p_ = newGe();
+    let q_ = newGe();
     if (!ristrettoUnpack(q_, q)) {
         return null;
     }
@@ -1915,7 +1915,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
         return null;
     }
     let p = newGePacked();
-    let p_ = newGE();
+    let p_ = newGe();
     scalarmultBase(p_, s);
     ristrettoPack(p, p_);
 
@@ -1928,7 +1928,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns `true` if verification succeeds
  */
 @global export function faPointValidate(q: Uint8Array): bool {
-    let q_ = newGE();
+    let q_ = newGe();
 
     return (!allZeros(q)) & ristrettoUnpack(q_, q);
 }
@@ -1941,8 +1941,8 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  */
 @global export function faPointAdd(p: Uint8Array, q: Uint8Array): Uint8Array | null {
     let o = newGePacked();
-    let p_ = newGE();
-    let q_ = newGE();
+    let p_ = newGe();
+    let q_ = newGe();
     if (!ristrettoUnpack(p_, p) || !ristrettoUnpack(q_, q, false)) {
         return null;
     }
@@ -1960,8 +1960,8 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  */
 @global export function faPointSub(p: Uint8Array, q: Uint8Array): Uint8Array | null {
     let o = newGePacked();
-    let p_ = newGE();
-    let q_ = newGE();
+    let p_ = newGe();
+    let q_ = newGe();
     if (!ristrettoUnpack(p_, p) || !ristrettoUnpack(q_, q, true)) {
         return null;
     }

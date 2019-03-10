@@ -6,6 +6,9 @@ import { LOAD, STORE } from 'internal/arraybuffer';
 import { precompBase } from './precomp';
 export { memory };
 
+type Scalar = Int64Array(64);
+type ScalarPacked = Uint8Array(32);
+
 @inline function setU8(t: Uint8Array, s: Uint8Array, o: isize = 0): void {
     for (let i: isize = 0, len = s.length; i < len; ++i) {
         t[i + o] = unchecked(s[i]);
@@ -245,11 +248,15 @@ _L[14] = 222;
 _L[15] = 20;
 _L[31] = 16;
 
-@inline function scn(): Int64Array {
+@inline function scExtn(): Scalar {
     return new Int64Array(64);
 }
 
-function scModL(r: Uint8Array, x: Int64Array): void {
+@inline function scPackedn(): ScalarPacked {
+    return new Uint8Array(32);
+}
+
+function scModL(r: ScalarPacked, x: Scalar): void {
     let carry: i64;
 
     for (let i = 63; i >= 32; --i) {
@@ -280,8 +287,8 @@ function scModL(r: Uint8Array, x: Int64Array): void {
     }
 }
 
-function scReduce(r: Uint8Array): void {
-    let x = new Int64Array(64);
+function scReduce(r: ScalarPacked): void {
+    let x = scExtn();
 
     for (let i = 0; i < 64; ++i) {
         x[i] = r[i];
@@ -290,7 +297,7 @@ function scReduce(r: Uint8Array): void {
     scModL(r, x);
 }
 
-function scCarry(a: Int64Array): void {
+function scCarry(a: Scalar): void {
     let carry: i64 = 0;
     for (let i = 0; i < 64; ++i) {
         let c = a[i] + carry;
@@ -302,9 +309,9 @@ function scCarry(a: Int64Array): void {
     }
 }
 
-function scMult(o: Int64Array, a: Int64Array, b: Int64Array): void {
-    let r = new Uint8Array(32);
-    let t = new Int64Array(64);
+function scMult(o: Scalar, a: Scalar, b: Scalar): void {
+    let r = scPackedn();
+    let t = scExtn();
 
     for (let i = 0; i < 32; ++i) {
         let ai = a[i];
@@ -322,11 +329,11 @@ function scMult(o: Int64Array, a: Int64Array, b: Int64Array): void {
     }
 }
 
-function scSq(o: Int64Array, a: Int64Array): void {
+function scSq(o: Scalar, a: Scalar): void {
     scMult(o, a, a);
 }
 
-function scSqMult(y: Int64Array, squarings: isize, x: Int64Array): void {
+function scSqMult(y: Scalar, squarings: isize, x: Scalar): void {
     for (let i = 0; i < squarings; ++i) {
         scSq(y, y);
     }
@@ -334,20 +341,20 @@ function scSqMult(y: Int64Array, squarings: isize, x: Int64Array): void {
 }
 
 function scInverse(s: Uint8Array): Uint8Array {
-    let res = new Uint8Array(32);
-    let _1 = scn();
+    let res = scPackedn();
+    let _1 = scExtn();
     for (let i = 0; i < 32; ++i) {
         _1[i] = s[i];
     }
-    let _10 = scn(),
-        _100 = scn(),
-        _11 = scn(),
-        _101 = scn(),
-        _111 = scn(),
-        _1001 = scn(),
-        _1011 = scn(),
-        _1111 = scn(),
-        y = scn();
+    let _10 = scExtn(),
+        _100 = scExtn(),
+        _11 = scExtn(),
+        _101 = scExtn(),
+        _111 = scExtn(),
+        _1001 = scExtn(),
+        _1011 = scExtn(),
+        _1111 = scExtn(),
+        y = scExtn();
 
     scSq(_10, _1);
     scSq(_100, _10);
@@ -394,7 +401,7 @@ function scInverse(s: Uint8Array): Uint8Array {
     return res;
 }
 
-@inline function scClamp(s: Uint8Array): void {
+@inline function scClamp(s: ScalarPacked): void {
     s[0] &= 248;
     s[31] = (s[31] & 127) | 64;
 }
@@ -420,12 +427,15 @@ function scSub(a: Uint8Array, b: Uint8Array): void {
 // mod(2^255-19) field arithmetic - Doesn't use 51-bit limbs yet to keep the
 // code short and simple
 
-@inline function fe25519n(): Int64Array {
+type Fe25519 = Int64Array(16);
+type Fe25519Packed = Uint8Array(32);
+
+@inline function fe25519n(): Fe25519 {
     return new Int64Array(16);
 }
 
-function fe25519(init: i64[]): Int64Array {
-    let r = new Int64Array(16);
+function fe25519(init: i64[]): Fe25519 {
+    let r = fe25519n();
 
     for (let i = 0, len = init.length; i < len; ++i) {
         r[i] = init[i];
@@ -471,7 +481,7 @@ let SQDMONE = fe25519([
     0x4eeb, 0x529b, 0xd32f, 0x4cdc, 0x2241, 0xf66c, 0xb37a, 0x5968,
 ]);
 
-@inline function fe25519Copy(r: Int64Array, a: Int64Array): void {
+@inline function fe25519Copy(r: Fe25519, a: Fe25519): void {
     r[0] = unchecked(a[0]);
     r[1] = unchecked(a[1]);
     r[2] = unchecked(a[2]);
@@ -490,7 +500,7 @@ let SQDMONE = fe25519([
     r[15] = unchecked(a[15]);
 }
 
-@inline function fe25519Cmov(p: Int64Array, q: Int64Array, b: i64): void {
+@inline function fe25519Cmov(p: Fe25519, q: Fe25519, b: i64): void {
     let mask = ~(b - 1);
     p[0] ^= (unchecked(p[0]) ^ unchecked(q[0])) & mask;
     p[1] ^= (unchecked(p[1]) ^ unchecked(q[1])) & mask;
@@ -510,7 +520,7 @@ let SQDMONE = fe25519([
     p[15] ^= (unchecked(p[15]) ^ unchecked(q[15])) & mask;
 }
 
-function fe25519Pack(o: Uint8Array, n: Int64Array): void {
+function fe25519Pack(o: Fe25519Packed, n: Fe25519): void {
     let b: i64;
     let m = fe25519n();
     let t = fe25519n();
@@ -538,7 +548,7 @@ function fe25519Pack(o: Uint8Array, n: Int64Array): void {
     }
 }
 
-function fe25519Unpack(o: Int64Array, n: Uint8Array): void {
+function fe25519Unpack(o: Fe25519, n: Fe25519Packed): void {
     let nb = n.buffer;
     for (let i = 0; i < 16; ++i) {
         o[i] = LOAD<u16, i64>(nb, i);
@@ -546,7 +556,7 @@ function fe25519Unpack(o: Int64Array, n: Uint8Array): void {
     o[15] &= 0x7fff;
 }
 
-function fe25519Eq(a: Int64Array, b: Int64Array): bool {
+function fe25519Eq(a: Fe25519, b: Fe25519): bool {
     let c = new Uint8Array(32),
         d = new Uint8Array(32);
 
@@ -556,7 +566,7 @@ function fe25519Eq(a: Int64Array, b: Int64Array): bool {
     return verify32(c, d);
 }
 
-function fe25519IsNegative(a: Int64Array): bool {
+function fe25519IsNegative(a: Fe25519): bool {
     let d = new Uint8Array(32);
 
     fe25519Pack(d, a);
@@ -564,18 +574,18 @@ function fe25519IsNegative(a: Int64Array): bool {
     return (d[0] & 1) as bool;
 }
 
-function fe25519Cneg(h: Int64Array, f: Int64Array, b: bool): void {
+function fe25519Cneg(h: Fe25519, f: Fe25519, b: bool): void {
     let negf = fe25519n();
     fe25519Sub(negf, fe25519_0, f);
     fe25519Copy(h, f);
     fe25519Cmov(h, negf, b as i64);
 }
 
-function fe25519Abs(h: Int64Array, f: Int64Array): void {
+function fe25519Abs(h: Fe25519, f: Fe25519): void {
     fe25519Cneg(h, f, fe25519IsNegative(f));
 }
 
-function fe25519IsZero(a: Int64Array): bool {
+function fe25519IsZero(a: Fe25519): bool {
     let b = new Uint8Array(32);
 
     fe25519Pack(b, a);
@@ -586,19 +596,19 @@ function fe25519IsZero(a: Int64Array): bool {
     return c === 0;
 }
 
-@inline function fe25519Add(o: Int64Array, a: Int64Array, b: Int64Array): void {
+@inline function fe25519Add(o: Fe25519, a: Fe25519, b: Fe25519): void {
     for (let i = 0; i < 16; ++i) {
         o[i] = a[i] + b[i];
     }
 }
 
-@inline function fe25519Sub(o: Int64Array, a: Int64Array, b: Int64Array): void {
+@inline function fe25519Sub(o: Fe25519, a: Fe25519, b: Fe25519): void {
     for (let i = 0; i < 16; ++i) {
         o[i] = a[i] - b[i];
     }
 }
 
-function fe25519Carry(o: Int64Array): void {
+function fe25519Carry(o: Fe25519): void {
     let c: i64;
 
     for (let i = 0; i < 15; ++i) {
@@ -613,7 +623,7 @@ function fe25519Carry(o: Int64Array): void {
     o[15] -= c << 16;
 }
 
-@inline function fe25519Reduce(o: Int64Array, a: Int64Array): void {
+@inline function fe25519Reduce(o: Fe25519, a: Fe25519): void {
     for (let i = 0; i < 15; ++i) {
         a[i] += 38 as i64 * a[i + 16];
     }
@@ -622,8 +632,8 @@ function fe25519Carry(o: Int64Array): void {
     fe25519Carry(o);
 }
 
-function fe25519Mult(o: Int64Array, a: Int64Array, b: Int64Array): void {
-    let t = new Int64Array(31);
+function fe25519Mult(o: Fe25519, a: Fe25519, b: Fe25519): void {
+    let t = new Int64Array(31 + 1);
 
     for (let i = 0; i < 16; ++i) {
         let ai = a[i];
@@ -634,11 +644,11 @@ function fe25519Mult(o: Int64Array, a: Int64Array, b: Int64Array): void {
     fe25519Reduce(o, t);
 }
 
-@inline function fe25519Sq(o: Int64Array, a: Int64Array): void {
+@inline function fe25519Sq(o: Fe25519, a: Fe25519): void {
     fe25519Mult(o, a, a);
 }
 
-function fe25519Inverse(o: Int64Array, i: Int64Array): void {
+function fe25519Inverse(o: Fe25519, i: Fe25519): void {
     let c = fe25519n();
 
     fe25519Copy(c, i);
@@ -651,7 +661,7 @@ function fe25519Inverse(o: Int64Array, i: Int64Array): void {
     fe25519Copy(o, c);
 }
 
-function fe25519Pow2523(o: Int64Array, i: Int64Array): void {
+function fe25519Pow2523(o: Fe25519, i: Fe25519): void {
     let c = fe25519n();
 
     fe25519Copy(c, i);

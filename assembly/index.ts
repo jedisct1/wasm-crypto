@@ -6,8 +6,9 @@ import { LOAD, STORE } from 'internal/arraybuffer';
 import { precompBase } from './precomp';
 export { memory };
 
-type Scalar = Int64Array(64);
-type ScalarPacked = Uint8Array(32);
+const DEBUG: bool = false;
+
+// Helpers
 
 @inline function setU8(t: Uint8Array, s: Uint8Array, o: isize = 0): void {
     for (let i: isize = 0, len = s.length; i < len; ++i) {
@@ -229,6 +230,17 @@ function allZeros(x: Uint8Array): bool {
 
 // mod(2^252 + 27742317777372353535851937790883648495) field arithmetic
 
+type Scalar = Int64Array(64);
+type ScalarPacked = Uint8Array(32);
+
+@inline function newScalar(): Scalar {
+    return new Int64Array(64);
+}
+
+@inline function newScalarPacked(): ScalarPacked {
+    return new Uint8Array(32);
+}
+
 let _L: Int64Array = new Int64Array(32);
 _L[0] = 237;
 _L[1] = 211;
@@ -247,14 +259,6 @@ _L[13] = 249;
 _L[14] = 222;
 _L[15] = 20;
 _L[31] = 16;
-
-@inline function newScalar(): Scalar {
-    return new Int64Array(64);
-}
-
-@inline function newScalarPacked(): ScalarPacked {
-    return new Uint8Array(32);
-}
 
 function scModL(r: ScalarPacked, x: Scalar): void {
     let carry: i64;
@@ -304,7 +308,7 @@ function scCarry(a: Scalar): void {
         a[i] = c & 0xff;
         carry = (c >>> 8)
     }
-    if (carry > 0) {
+    if (DEBUG && carry > 0) {
         throw new Error('overflow');
     }
 }
@@ -1757,7 +1761,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param s Scalar
  * @returns Compressed EC point `q * s`
  */
-@global export function faEdPointMult(s: Uint8Array, q: Uint8Array): Uint8Array {
+@global export function faEdPointMult(s: Uint8Array, q: Uint8Array): Uint8Array | null {
     let p_ = newGE();
     let q_ = newGE();
     if (!unpack(q_, q, false) || !faEdPointValidate(q)) {
@@ -1777,7 +1781,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param s Scalar
  * @returns Compressed EC point `B * s`
  */
-@global export function faEdBasePointMult(s: Uint8Array): Uint8Array {
+@global export function faEdBasePointMult(s: Uint8Array): Uint8Array | null {
     if (allZeros(s)) {
         return null;
     }
@@ -1795,7 +1799,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param s Scalar
  * @returns Compressed EC point `q * clamp(s)`
  */
-@global export function faEdPointMultClamp(s: Uint8Array, q: Uint8Array): Uint8Array {
+@global export function faEdPointMultClamp(s: Uint8Array, q: Uint8Array): Uint8Array | null {
     let s_ = newScalarPacked();
     setU8(s_, s);
     scClamp(s_);
@@ -1808,7 +1812,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param s Scalar
  * @returns Compressed EC point `B * clamp(s)`
  */
-@global export function faEdBasePointMultClamp(s: Uint8Array): Uint8Array {
+@global export function faEdBasePointMultClamp(s: Uint8Array): Uint8Array | null {
     let s_ = newScalarPacked();
     setU8(s_, s);
     scClamp(s_);
@@ -1848,7 +1852,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param q Compressed EC point
  * @returns `p` + `q`
  */
-@global export function faEdPointAdd(p: Uint8Array, q: Uint8Array): Uint8Array {
+@global export function faEdPointAdd(p: Uint8Array, q: Uint8Array): Uint8Array | null {
     let o = newGePacked();
     let p_ = newGE();
     let q_ = newGE();
@@ -1867,7 +1871,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param q Compressed EC point
  * @returns `p` - `q`
  */
-@global export function faEdPointSub(p: Uint8Array, q: Uint8Array): Uint8Array {
+@global export function faEdPointSub(p: Uint8Array, q: Uint8Array): Uint8Array | null {
     let o = newGePacked();
     let p_ = newGE();
     let q_ = newGE();
@@ -1886,7 +1890,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param s Scalar
  * @returns Compressed EC point `q * s`
  */
-@global export function faPointMult(s: Uint8Array, q: Uint8Array): Uint8Array {
+@global export function faPointMult(s: Uint8Array, q: Uint8Array): Uint8Array | null {
     let p_ = newGE();
     let q_ = newGE();
     if (!ristrettoUnpack(q_, q)) {
@@ -1906,7 +1910,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param s Scalar
  * @returns Ristretto-compressed EC point `B * s`
  */
-@global export function faBasePointMult(s: Uint8Array): Uint8Array {
+@global export function faBasePointMult(s: Uint8Array): Uint8Array | null {
     if (allZeros(s)) {
         return null;
     }
@@ -1935,7 +1939,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param q Risterto-compressed EC point
  * @returns `p` + `q`
  */
-@global export function faPointAdd(p: Uint8Array, q: Uint8Array): Uint8Array {
+@global export function faPointAdd(p: Uint8Array, q: Uint8Array): Uint8Array | null {
     let o = newGePacked();
     let p_ = newGE();
     let q_ = newGE();
@@ -1954,7 +1958,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param q Ristretto-compressed EC point
  * @returns `p` - `q`
  */
-@global export function faPointSub(p: Uint8Array, q: Uint8Array): Uint8Array {
+@global export function faPointSub(p: Uint8Array, q: Uint8Array): Uint8Array | null {
     let o = newGePacked();
     let p_ = newGE();
     let q_ = newGE();

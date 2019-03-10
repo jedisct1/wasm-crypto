@@ -8,7 +8,7 @@ export { memory };
 
 @inline function setU8(t: Uint8Array, s: Uint8Array, o: isize = 0): void {
     for (let i: isize = 0, len = s.length; i < len; ++i) {
-        t[i + o] = s[i];
+        t[i + o] = unchecked(s[i]);
     }
 }
 
@@ -257,7 +257,7 @@ function scModL(r: Uint8Array, x: Int64Array): void {
         let k = i - 12;
         let xi = x[i];
         for (let j = i - 32; j < k; ++j) {
-            let xj = x[j] + carry - 16 * xi * _L[j - (i - 32)];
+            let xj = unchecked(x[j] + carry - 16 * xi * _L[j - (i - 32)]);
             carry = (xj + 128) >> 8;
             x[j] = xj - carry * 256;
         }
@@ -266,15 +266,15 @@ function scModL(r: Uint8Array, x: Int64Array): void {
     }
     carry = 0;
     for (let j = 0; j < 32; ++j) {
-        let xj = x[j] + carry - (x[31] >> 4) * _L[j];
+        let xj = unchecked(x[j] + carry - (x[31] >> 4) * _L[j]);
         carry = xj >> 8;
         x[j] = xj & 255;
     }
     for (let j = 0; j < 32; ++j) {
-        x[j] -= carry * _L[j];
+        x[j] -= unchecked(carry * _L[j]);
     }
     for (let i = 0; i < 32; ++i) {
-        let xi = x[i];
+        let xi = unchecked(x[i]);
         x[i + 1] += xi >> 8;
         r[i] = xi as u8;
     }
@@ -309,7 +309,7 @@ function scMult(o: Int64Array, a: Int64Array, b: Int64Array): void {
     for (let i = 0; i < 32; ++i) {
         let ai = a[i];
         for (let j = 0; j < 32; ++j) {
-            t[i + j] += ai * b[j];
+            t[i + j] += ai * unchecked(b[j]);
         }
     }
     scCarry(t);
@@ -628,7 +628,7 @@ function fe25519Mult(o: Int64Array, a: Int64Array, b: Int64Array): void {
     for (let i = 0; i < 16; ++i) {
         let ai = a[i];
         for (let j = 0; j < 16; ++j) {
-            t[i + j] += ai * b[j];
+            t[i + j] += ai * unchecked(b[j]);
         }
     }
     fe25519Reduce(o, t);
@@ -1134,7 +1134,7 @@ function _signEdDetached(sig: Uint8Array, m: Uint8Array, kp: Uint8Array, Z: Uint
     }
     for (let i = 0; i < 32; ++i) {
         for (let j = 0; j < 32; ++j) {
-            x[i + j] += (hram[i] as i64) * (az[j] as i64);
+            x[i + j] += unchecked((hram[i] as i64) * (az[j] as i64));
         }
     }
     scModL(sig.subarray(32), x);
@@ -1211,7 +1211,7 @@ function _signDetached(sig: Uint8Array, m: Uint8Array, kp: Uint8Array, Z: Uint8A
     }
     for (let i = 0; i < 32; ++i) {
         for (let j = 0; j < 32; ++j) {
-            x[i + j] += (hram[i] as i64) * (az[j] as i64);
+            x[i + j] += unchecked((hram[i] as i64) * (az[j] as i64));
         }
     }
     scModL(sig.subarray(32), x);

@@ -260,6 +260,20 @@ _L[14] = 222;
 _L[15] = 20;
 _L[31] = 16;
 
+function scIsLtL(s: ScalarPacked): bool {
+    let c: u8 = 0, n: u8 = 1, i = 32;
+
+    do {
+        i--;
+        let l = unchecked(_L[i]) as u8;
+        let si = unchecked(s[i]);
+        c |= ((si - l) >> 8) & n;
+        n &= ((si ^ l) - 1) >> 8;
+    } while (i !== 0);
+
+    return c === 0;
+}
+
 function scModL(r: ScalarPacked, x: Scalar): void {
     let carry: i64;
 
@@ -885,8 +899,12 @@ function unpack(r: Ge, p: GePacked, neg: bool = false): bool {
     return true;
 }
 
-function isIdentity(s: GePacked): bool {
+@inline function isIdentity(s: GePacked): bool {
     return allZeros(s);
+}
+
+@inline function geIsIdentity(p: Ge): bool {
+    return fe25519IsZero(p.y);
 }
 
 function isCanonical(s: GePacked): bool {
@@ -1039,13 +1057,12 @@ function ristrettoPack(s: GePacked, h: Ge): void {
     fe25519Pack(s, s_);
 }
 
-function ristrettoIsIdentity(s: GePacked): bool {
-    let c = 0;
+@inline function ristrettoIsIdentity(s: GePacked): bool {
+    return allZeros(s);
+}
 
-    for (let i = 0; i < 32; ++i) {
-        c |= s[i];
-    }
-    return c === 0;
+@inline function ristrettoGeIsIdentity(p: Ge): bool {
+    return fe25519IsZero(p.x);
 }
 
 function ristrettoElligator(p: Ge, t: Fe25519): void {
@@ -1091,7 +1108,7 @@ function ristrettoElligator(p: Ge, t: Fe25519): void {
 
 type Uniform = Uint8Array(64);
 
-function ristrettoFromUniform(s: GePacked, r: Uniform): void {
+function ristrettoFromUniform(p: Ge, r: Uniform): void {
     let r0 = newFe25519(), r1 = newFe25519();
     let p0 = newGe(), p1 = newGe();
 
@@ -1100,7 +1117,7 @@ function ristrettoFromUniform(s: GePacked, r: Uniform): void {
     ristrettoElligator(p0, r0);
     ristrettoElligator(p1, r1);
     add(p0, p1);
-    ristrettoPack(s, p0);
+    geCopy(p, p0);
 }
 
 // Common functions used for signatures
@@ -1190,7 +1207,7 @@ function _signEdDetached(sig: Signature, m: Uint8Array, kp: KeyPair, Z: Uint8Arr
 }
 
 function _signEdVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool {
-    if (!isCanonical(pk) || isIdentity(pk) || !isCanonical(sig.subarray(32))) {
+    if (!isCanonical(pk) || isIdentity(pk) || !scIsLtL(sig.subarray(32))) {
         return false;
     }
     let A = newGe();
@@ -1267,6 +1284,9 @@ function _signDetached(sig: Signature, m: Uint8Array, kp: KeyPair, Z: Uint8Array
 }
 
 function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool {
+    if (ristrettoIsIdentity(pk) || !scIsLtL(sig.subarray(32))) {
+        return false;
+    }
     let A = newGe();
     if (!ristrettoUnpack(A, pk, true)) {
         return false;
@@ -1763,21 +1783,40 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
 }
 
 /**
+ * Return the compressed representation of a point
+ * @param p Internal pointer to the point coordinates
+ * @returns A compressed representation of the point
+ */
+@global export function faEdPointPack(p: Ge): Uint8Array {
+    let p_ = newGePacked();
+    pack(p_, p);
+
+    return p_;
+}
+
+/**
+ * Unpack a compressed point, and returns an internal pointer of its coordinates
+ * @param p_ Compressed point
+ * @returns An internal pointer of the point's coordinates or null if `p_` is invalid
+ */
+@global export function faEdPointUnpack(p_: Uint8Array): Ge {
+    let p = newGe();
+    if (!unpack(p, p_, false)) {
+        return null;
+    }
+    return p;
+}
+
+/**
  * Multiply a point `q` by a scalar `s`
  * @param q Compressed EC point
  * @param s Scalar
  * @returns Compressed EC point `q * s`
  */
-@global export function faEdPointMult(s: Uint8Array, q: Uint8Array): Uint8Array | null {
-    let p_ = newGe();
-    let q_ = newGe();
-    if (!unpack(q_, q, false) || !faEdPointValidate(q)) {
-        return null;
-    }
-    scalarmult(p_, s, q_);
-    let p = newGePacked();
-    pack(p, p_);
-    if (isIdentity(p)) {
+@global export function faEdPointMult(s: Uint8Array, q: Ge): Ge {
+    let p = newGe();
+    scalarmult(p, s, q);
+    if (geIsIdentity(p)) {
         return null;
     }
     return p;
@@ -1788,14 +1827,12 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param s Scalar
  * @returns Compressed EC point `B * s`
  */
-@global export function faEdBasePointMult(s: Uint8Array): Uint8Array | null {
+@global export function faEdBasePointMult(s: Uint8Array): Ge {
     if (allZeros(s)) {
         return null;
     }
-    let p = newGePacked();
-    let p_ = newGe();
-    scalarmultBase(p_, s);
-    pack(p, p_);
+    let p = newGe();
+    scalarmultBase(p, s);
 
     return p;
 }
@@ -1806,7 +1843,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param s Scalar
  * @returns Compressed EC point `q * clamp(s)`
  */
-@global export function faEdPointMultClamp(s: Uint8Array, q: Uint8Array): Uint8Array | null {
+@global export function faEdPointMultClamp(s: Uint8Array, q: Ge): Ge {
     let s_ = newScalarPacked();
     setU8(s_, s);
     scClamp(s_);
@@ -1819,7 +1856,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param s Scalar
  * @returns Compressed EC point `B * clamp(s)`
  */
-@global export function faEdBasePointMultClamp(s: Uint8Array): Uint8Array | null {
+@global export function faEdBasePointMultClamp(s: Uint8Array): Ge {
     let s_ = newScalarPacked();
     setU8(s_, s);
     scClamp(s_);
@@ -1859,15 +1896,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param q Compressed EC point
  * @returns `p` + `q`
  */
-@global export function faEdPointAdd(p: Uint8Array, q: Uint8Array): Uint8Array | null {
-    let o = newGePacked();
-    let p_ = newGe();
-    let q_ = newGe();
-    if (!unpack(p_, p, false) || !unpack(q_, q, false)) {
-        return null;
-    }
-    add(p_, q_);
-    pack(o, p_);
+@global export function faEdPointAdd(p: Ge, q: Ge): Ge {
+    let o = newGe();
+    geCopy(o, p);
+    add(o, q);
 
     return o;
 }
@@ -1878,17 +1910,38 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param q Compressed EC point
  * @returns `p` - `q`
  */
-@global export function faEdPointSub(p: Uint8Array, q: Uint8Array): Uint8Array | null {
-    let o = newGePacked();
-    let p_ = newGe();
-    let q_ = newGe();
-    if (!unpack(p_, p, false) || !unpack(q_, q, true)) {
-        return null;
-    }
-    add(p_, q_);
-    pack(o, p_);
+@global export function faEdPointSub(p: Ge, q: Ge): Ge {
+    let q_ = newGePacked(), o = newGe();
+    pack(q_, q);
+    unpack(o, q_, true);
+    add(o, p);
 
     return o;
+}
+
+/**
+ * Return the compressed representation of a point
+ * @param p Internal pointer to the point coordinates
+ * @returns A compressed representation of the point
+ */
+@global export function faPointPack(p: Ge): Uint8Array {
+    let p_ = newGePacked();
+    ristrettoPack(p_, p);
+
+    return p_;
+}
+
+/**
+ * Unpack a compressed point, and returns an internal pointer of its coordinates
+ * @param p_ Compressed point
+ * @returns An internal pointer of the point's coordinates or null if `p_` is invalid
+ */
+@global export function faPointUnpack(p_: Uint8Array): Ge {
+    let p = newGe();
+    if (!ristrettoUnpack(p, p_, false)) {
+        return null;
+    }
+    return p;
 }
 
 /**
@@ -1897,16 +1950,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param s Scalar
  * @returns Compressed EC point `q * s`
  */
-@global export function faPointMult(s: Uint8Array, q: Uint8Array): Uint8Array | null {
-    let p_ = newGe();
-    let q_ = newGe();
-    if (!ristrettoUnpack(q_, q)) {
-        return null;
-    }
-    scalarmult(p_, s, q_);
-    let p = newGePacked();
-    ristrettoPack(p, p_);
-    if (ristrettoIsIdentity(p)) {
+@global export function faPointMult(s: Uint8Array, q: Ge): Ge {
+    let p = newGe();
+    scalarmult(p, s, q);
+    if (ristrettoGeIsIdentity(p)) {
         return null;
     }
     return p;
@@ -1917,14 +1964,12 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param s Scalar
  * @returns Ristretto-compressed EC point `B * s`
  */
-@global export function faBasePointMult(s: Uint8Array): Uint8Array | null {
+@global export function faBasePointMult(s: Uint8Array): Ge {
     if (allZeros(s)) {
         return null;
     }
-    let p = newGePacked();
-    let p_ = newGe();
-    scalarmultBase(p_, s);
-    ristrettoPack(p, p_);
+    let p = newGe();
+    scalarmultBase(p, s);
 
     return p;
 }
@@ -1946,15 +1991,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param q Risterto-compressed EC point
  * @returns `p` + `q`
  */
-@global export function faPointAdd(p: Uint8Array, q: Uint8Array): Uint8Array | null {
-    let o = newGePacked();
-    let p_ = newGe();
-    let q_ = newGe();
-    if (!ristrettoUnpack(p_, p) || !ristrettoUnpack(q_, q, false)) {
-        return null;
-    }
-    add(p_, q_);
-    ristrettoPack(o, p_);
+@global export function faPointAdd(p: Ge, q: Ge): Ge {
+    let o = newGe();
+    geCopy(o, p);
+    add(o, q);
 
     return o;
 }
@@ -1965,15 +2005,11 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param q Ristretto-compressed EC point
  * @returns `p` - `q`
  */
-@global export function faPointSub(p: Uint8Array, q: Uint8Array): Uint8Array | null {
-    let o = newGePacked();
-    let p_ = newGe();
-    let q_ = newGe();
-    if (!ristrettoUnpack(p_, p) || !ristrettoUnpack(q_, q, true)) {
-        return null;
-    }
-    add(p_, q_);
-    ristrettoPack(o, p_);
+@global export function faPointSub(p: Ge, q: Ge): Ge {
+    let q_ = newGePacked(), o = newGe();
+    ristrettoPack(q_, q);
+    ristrettoUnpack(o, q_, true);
+    add(o, p);
 
     return o;
 }
@@ -1983,9 +2019,8 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param r 512 bit hash
  * @returns Ristretto-compressed EC point
  */
-@global export function faPointFromUniform(r: Uint8Array): Uint8Array {
-    let p = newGePacked();
-
+@global export function faPointFromUniform(r: Uint8Array): Ge {
+    let p = newGe();
     ristrettoFromUniform(p, r);
 
     return p;

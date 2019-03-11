@@ -899,7 +899,7 @@ function unpack(r: Ge, p: GePacked, neg: bool = false): bool {
     return true;
 }
 
-function isIdentity(s: GePacked): bool {
+@inline function isIdentity(s: GePacked): bool {
     return allZeros(s);
 }
 
@@ -1053,7 +1053,7 @@ function ristrettoPack(s: GePacked, h: Ge): void {
     fe25519Pack(s, s_);
 }
 
-function ristrettoIsIdentity(s: GePacked): bool {
+@inline function ristrettoIsIdentity(s: GePacked): bool {
     return allZeros(s);
 }
 

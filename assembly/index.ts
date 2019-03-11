@@ -1848,7 +1848,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
     setU8(s_, s);
     scClamp(s_);
 
-    return faEdPointMult(s, q);
+    return faEdPointMult(s_, q);
 }
 
 /**
@@ -1861,7 +1861,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
     setU8(s_, s);
     scClamp(s_);
 
-    return faEdBasePointMult(s);
+    return faEdBasePointMult(s_);
 }
 
 /**

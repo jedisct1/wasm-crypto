@@ -903,13 +903,16 @@ function unpack(r: Ge, p: GePacked, neg: bool = false): bool {
 }
 
 @inline function isIdentity(s: GePacked): bool {
-    return allZeros(s);
+    let c: u8 = unchecked(s[0]) ^ 0x01;
+    for (let i = 1; i < 31; i++) {
+        c |= unchecked(s[i]);
+    }
+    c |= unchecked(s[31]) & 0x7f;
+
+    return c === 0;
 }
 
 function isCanonical(s: GePacked): bool {
-    if (allZeros(s)) {
-        return false;
-    }
     let c: u32 = (s[31] & 0x7f) ^ 0x7f;
     for (let i = 30; i > 0; --i) {
         c |= s[i] ^ 0xff;
@@ -1202,7 +1205,7 @@ function _signEdDetached(sig: Signature, m: Uint8Array, kp: KeyPair, Z: Uint8Arr
 }
 
 function _signEdVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool {
-    if (!isCanonical(pk) || isIdentity(pk) || !scIsLtL(sig.subarray(32))) {
+    if (isIdentity(pk) || !isCanonical(pk) || !scIsLtL(sig.subarray(32))) {
         return false;
     }
     let A = newGe();
@@ -1668,7 +1671,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
 }
 
 /**
- * Multiply `s` by the group cofactor
+ * Multiply `s` by the Ed25519 group cofactor
  *
  * @param s Scalar (32 bytes)
  * @returns `s * 8`
@@ -1848,6 +1851,9 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns `true` if verification succeeds
  */
 @global export function faEdPointValidate(q: Uint8Array): bool {
+    if (isIdentity(q)) {
+        return false;
+    }
     let l = newGePacked();
     let p_ = newGe();
     let q_ = newGe();
@@ -1952,7 +1958,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
 @global export function faPointValidate(q: Uint8Array): bool {
     let q_ = newGe();
 
-    return (!allZeros(q)) & ristrettoUnpack(q_, q);
+    return (!ristrettoIsIdentity(q)) & ristrettoUnpack(q_, q);
 }
 
 /**

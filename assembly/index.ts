@@ -6,7 +6,7 @@ import { LOAD, STORE } from 'internal/arraybuffer';
 import { precompBase } from './precomp';
 export { memory };
 
-const DEBUG: bool = false;
+const RELEASE: bool = true;
 
 // Helpers
 
@@ -322,7 +322,7 @@ function scCarry(a: Scalar): void {
         a[i] = c & 0xff;
         carry = (c >>> 8)
     }
-    if (DEBUG && carry > 0) {
+    if (!RELEASE && carry > 0) {
         throw new Error('overflow');
     }
 }

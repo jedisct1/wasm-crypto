@@ -5,7 +5,7 @@ describe("equals", (): void => {
     for (let i = 0; i < 42; i++) {
       x[i] = y[i] = i;
     }
-    expect<i32>(equals(x, y)).toBeTruthy();
+    expect<bool>(equals(x, y)).toBeTruthy();
   });
 });
 

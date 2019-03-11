@@ -1171,7 +1171,7 @@ function _signEdDetached(sig: Signature, m: Uint8Array, kp: KeyPair, Z: Uint8Arr
     let r: isize = 0;
 
     _hash(az, kp, 32);
-    if (Z.length > 0) {
+    if (Z !== null && Z.length > 0) {
         r = _signSyntheticRHv(hs, r, Z, az);
     } else {
         r = _hashUpdate(hs, az.subarray(32), 32, r);
@@ -1249,7 +1249,7 @@ function _signDetached(sig: Signature, m: Uint8Array, kp: KeyPair, Z: Uint8Array
     let r: isize = 0;
 
     _hash(az, kp, 32);
-    if (Z.length > 0) {
+    if (Z !== null && Z.length > 0) {
         r = _signSyntheticRHv(hs, r, Z, az);
     } else {
         r = _hashUpdate(hs, az.subarray(32), 32, r);
@@ -1424,7 +1424,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  *     signatures
  * @returns Signature
  */
-@global export function sign(m: Uint8Array, kp: Uint8Array, Z: Uint8Array): Uint8Array {
+@global export function sign(m: Uint8Array, kp: Uint8Array, Z: Uint8Array = null): Uint8Array {
     let sig = new Uint8Array(SIGN_BYTES);
     _signDetached(sig, m, kp, Z);
 
@@ -1504,7 +1504,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  *     signatures
  * @returns Signature
  */
-@global export function signEd(m: Uint8Array, kp: Uint8Array, Z: Uint8Array): Uint8Array {
+@global export function signEd(m: Uint8Array, kp: Uint8Array, Z: Uint8Array = null): Uint8Array {
     let sig = new Uint8Array(SIGN_ED_BYTES);
     _signEdDetached(sig, m, kp, Z);
 

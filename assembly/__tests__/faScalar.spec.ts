@@ -42,5 +42,8 @@ describe("field arithmetic using scalars", (): void => {
     let x_neg = faScalarNegate(x);
     let x_plus_x_neg = faScalarAdd(x, x_neg);
     expect<bool>(equals(x_plus_x_neg, zero)).toBeTruthy();
+
+    let cof = faScalarCofactorMult(one);
+    expect<u8>(cof[0]).toStrictEqual(8);
   });
 });

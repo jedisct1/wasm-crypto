@@ -12,6 +12,7 @@ Currently provides:
 - Point validation, point addition, scalar multiplication with and without clamping over Edwards25519 using the standard Ed25519 point encoding.
 - Fast point validation, hash-to-point, point addition, scalar multiplication over the [Ristretto](https://ristretto.group) prime-order group.
 - Scalar reduction, scalar multiplication, scalar inversion mod the order of the prime-order groups for multiparty computation and oblivious pseudorandom functions.
+- Constant-time comparison and encoding.
 
 ## Javascript (TypeScript) bindings
 

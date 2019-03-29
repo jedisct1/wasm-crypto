@@ -739,36 +739,36 @@ type GePacked = Uint8Array(32);
     fe25519Copy(r.t, a.t);
 }
 
+let Aa = newFe25519(),
+    Ab = newFe25519(),
+    Ac = newFe25519(),
+    Ad = newFe25519(),
+    Ae = newFe25519(),
+    Af = newFe25519(),
+    Ag = newFe25519(),
+    Ah = newFe25519(),
+    At = newFe25519();
+
 function add(p: Ge, q: Ge): void {
-    let a = newFe25519(),
-        b = newFe25519(),
-        c = newFe25519(),
-        d = newFe25519(),
-        e = newFe25519(),
-        f = newFe25519(),
-        g = newFe25519(),
-        h = newFe25519(),
-        t = newFe25519();
+    fe25519Sub(Aa, p.y, p.x);
+    fe25519Sub(At, q.y, q.x);
+    fe25519Mult(Aa, Aa, At);
+    fe25519Add(Ab, p.x, p.y);
+    fe25519Add(At, q.x, q.y);
+    fe25519Mult(Ab, Ab, At);
+    fe25519Mult(Ac, p.t, q.t);
+    fe25519Mult(Ac, Ac, D2);
+    fe25519Mult(Ad, p.z, q.z);
+    fe25519Add(Ad, Ad, Ad);
+    fe25519Sub(Ae, Ab, Aa);
+    fe25519Sub(Af, Ad, Ac);
+    fe25519Add(Ag, Ad, Ac);
+    fe25519Add(Ah, Ab, Aa);
 
-    fe25519Sub(a, p.y, p.x);
-    fe25519Sub(t, q.y, q.x);
-    fe25519Mult(a, a, t);
-    fe25519Add(b, p.x, p.y);
-    fe25519Add(t, q.x, q.y);
-    fe25519Mult(b, b, t);
-    fe25519Mult(c, p.t, q.t);
-    fe25519Mult(c, c, D2);
-    fe25519Mult(d, p.z, q.z);
-    fe25519Add(d, d, d);
-    fe25519Sub(e, b, a);
-    fe25519Sub(f, d, c);
-    fe25519Add(g, d, c);
-    fe25519Add(h, b, a);
-
-    fe25519Mult(p.x, e, f);
-    fe25519Mult(p.y, h, g);
-    fe25519Mult(p.z, g, f);
-    fe25519Mult(p.t, e, h);
+    fe25519Mult(p.x, Ae, Af);
+    fe25519Mult(p.y, Ah, Ag);
+    fe25519Mult(p.z, Ag, Af);
+    fe25519Mult(p.t, Ae, Ah);
 }
 
 @inline function cmov(p: Ge, q: Ge, b: i64): void {
@@ -869,7 +869,7 @@ function scalarmultBase(p: Ge, s: ScalarPacked): void {
         let precomp = precomp_base[i];
         fe25519CopyPrecomp(q.x, precomp[0]);
         fe25519CopyPrecomp(q.y, precomp[1]);
-        fe25519CopyPrecomp(q.t, precomp[2]); 
+        fe25519CopyPrecomp(q.t, precomp[2]);
         geCopy(t, p);
         add(t, q);
         cmov(p, t, b);

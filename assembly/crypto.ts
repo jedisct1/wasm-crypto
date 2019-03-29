@@ -832,6 +832,25 @@ function scalarmult(p: Ge, s: ScalarPacked, q: Ge): void {
     }
 }
 
+@inline function fe25519CopyPrecomp(r: Fe25519, a: Array<i64>): void {
+    r[0] = unchecked(a[0]);
+    r[1] = unchecked(a[1]);
+    r[2] = unchecked(a[2]);
+    r[3] = unchecked(a[3]);
+    r[4] = unchecked(a[4]);
+    r[5] = unchecked(a[5]);
+    r[6] = unchecked(a[6]);
+    r[7] = unchecked(a[7]);
+    r[8] = unchecked(a[8]);
+    r[9] = unchecked(a[9]);
+    r[10] = unchecked(a[10]);
+    r[11] = unchecked(a[11]);
+    r[12] = unchecked(a[12]);
+    r[13] = unchecked(a[13]);
+    r[14] = unchecked(a[14]);
+    r[15] = unchecked(a[15]);
+}
+
 function scalarmultBase(p: Ge, s: ScalarPacked): void {
     let q = newGe(),
         t = newGe(),
@@ -848,9 +867,9 @@ function scalarmultBase(p: Ge, s: ScalarPacked): void {
     for (let i = 0; i <= 255; ++i) {
         b = (s[(i >>> 3)] >>> (i as u8 & 7)) & 1;
         let precomp = precomp_base[i];
-        q.x = fe25519(precomp[0]);
-        q.y = fe25519(precomp[1]);
-        q.t = fe25519(precomp[2]);
+        fe25519CopyPrecomp(q.x, precomp[0]);
+        fe25519CopyPrecomp(q.y, precomp[1]);
+        fe25519CopyPrecomp(q.t, precomp[2]); 
         geCopy(t, p);
         add(t, q);
         cmov(p, t, b);

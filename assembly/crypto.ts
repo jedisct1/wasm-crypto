@@ -138,14 +138,13 @@ function _hashInit(): Uint8Array {
 
 function _hashUpdate(st: Uint8Array, m: Uint8Array, n: isize, r: isize): isize {
     let w = st.subarray(64);
-    let pos = 0;
     let av = 128 - r;
     let tc = min(n, av);
 
     setU8(w, m.subarray(0, tc), r);
     r += tc;
     n -= tc;
-    pos += tc;
+    let pos = tc;
     if (r === 128) {
         _hashblocks(st, w, 128);
         r = 0;
@@ -153,8 +152,8 @@ function _hashUpdate(st: Uint8Array, m: Uint8Array, n: isize, r: isize): isize {
     if (r === 0 && n > 0) {
         let rb = _hashblocks(st, m.subarray(pos), n);
         if (rb > 0) {
-            setU8(w, m.subarray(pos + n - rb), r);
-            r += rb;
+            setU8(w, m.subarray(pos + n - rb));
+            r = rb;
         }
     }
     return r;

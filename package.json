@@ -9,5 +9,6 @@
     "devDependencies": {
         "assemblyscript": "github:AssemblyScript/assemblyscript",
         "as-pect": "github:jtenner/as-pect"
-    }
+    },
+    "types": "assembly/index"
 }

@@ -1122,9 +1122,9 @@ function ristrettoElligator(p: Ge, t: Fe25519): void {
     fe25519Mult(p.t, w0, w2);
 }
 
-type Uniform = Uint8Array(64);
+type Hash512 = Uint8Array(64);
 
-function ristrettoFromUniform(s: GePacked, r: Uniform): void {
+function ristrettoFromHash(s: GePacked, r: Hash512): void {
     let r0 = newFe25519(), r1 = newFe25519();
     let p0 = newGe(), p1 = newGe();
 
@@ -2022,10 +2022,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param r 512 bit hash
  * @returns Ristretto-compressed EC point
  */
-@global export function faPointFromUniform(r: Uint8Array): Uint8Array {
+@global export function faPointFromHash(r: Uint8Array): Uint8Array {
     let p = newGePacked();
 
-    ristrettoFromUniform(p, r);
+    ristrettoFromHash(p, r);
 
     return p;
 }

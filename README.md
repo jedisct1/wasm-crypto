@@ -5,8 +5,8 @@ A WebAssembly (via AssemblyScript) set of cryptographic primitives for building 
 Currently provides:
 
 - [RFC 8032](https://tools.ietf.org/html/rfc8032)/libsodium-compatible detached [EdDSA signatures](https://download.libsodium.org/doc/public-key_cryptography/public-key_signatures)
-- Ed25519 signatures and non-deterministic signatures using Trevor Perrin's [generalized EdDSA](https://moderncrypto.org/mail-archive/curves/2017/000925.html) scheme
-- Deterministic and non-deterministic Schnorr signatures over the Ristretto group.
+- Ed25519 deterministic and non-deterministic signatures.
+- Deterministic and non-deterministic signatures over the Ristretto group.
 - Hashing (simple + multi-parts)
 - Authentication (HMAC-SHA-512)
 - Point validation, point addition, scalar multiplication with and without clamping over Edwards25519 using the standard Ed25519 point encoding.

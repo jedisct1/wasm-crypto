@@ -8,7 +8,7 @@
     },
     "devDependencies": {
         "as-pect": "github:jtenner/as-pect",
-        "assemblyscript": "github:AssemblyScript/assemblyscript"
+        "assemblyscript": "github:AssemblyScript/assemblyscript#v0.6"
     },
     "types": "assembly/index"
 }

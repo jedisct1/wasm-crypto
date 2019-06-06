@@ -40,12 +40,26 @@ const RELEASE: bool = true;
     return (x & y) ^ (x & z) ^ (y & z);
 }
 
-function load64(x: Uint8Array, offset: isize): u64 {
-    return LOAD<u64>(x.buffer, 0, offset);
+function load64_be(x: Uint8Array, offset: isize): u64 {
+    return unchecked(x[offset + 7] as u64) |
+        unchecked(x[offset + 6] as u64) << 8 |
+        unchecked(x[offset + 5] as u64) << 16 |
+        unchecked(x[offset + 4] as u64) << 24 |
+        unchecked(x[offset + 3] as u64) << 32 |
+        unchecked(x[offset + 2] as u64) << 40 |
+        unchecked(x[offset + 1] as u64) << 48 |
+        unchecked(x[offset + 0] as u64) << 56;
 }
 
-function store64(x: Uint8Array, offset: isize, u: u64): void {
-    STORE<u64>(x.buffer, 0, u, offset);
+function store64_be(x: Uint8Array, offset: isize, u: u64): void {
+    x[offset + 7] = u as u8;
+    x[offset + 6] = (u >>> 8) as u8;
+    x[offset + 5] = (u >>> 16) as u8;
+    x[offset + 4] = (u >>> 24) as u8;
+    x[offset + 3] = (u >>> 32) as u8;
+    x[offset + 2] = (u >>> 40) as u8;
+    x[offset + 1] = (u >>> 48) as u8;
+    x[offset + 0] = (u >>> 56) as u8;
 }
 
 const K: u64[] = [
@@ -79,12 +93,12 @@ function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
         t: u64;
 
     for (let i = 0; i < 8; ++i) {
-        z[i] = a[i] = load64(st, i << 3);
+        z[i] = a[i] = load64_be(st, i << 3);
     }
     let pos = 0;
     while (n >= 128) {
         for (let i = 0; i < 16; ++i) {
-            w[i] = load64(m, (i << 3) + pos);
+            w[i] = load64_be(m, (i << 3) + pos);
         }
         for (let i = 0; i < 80; ++i) {
             for (let j = 0; j < 8; ++j) {
@@ -110,7 +124,7 @@ function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
         n -= 128;
     }
     for (let i = 0; i < 8; ++i) {
-        store64(st, i << 3, z[i]);
+        store64_be(st, i << 3, z[i]);
     }
     return n;
 }
@@ -167,7 +181,7 @@ function _hashFinal(st: Uint8Array, out: Uint8Array, t: isize, r: isize): void {
     x[r] = 128;
     r = 256 - (isize(r < 112) << 7);
     x[r - 9] = 0;
-    store64(x, r - 8, t << 3);
+    store64_be(x, r - 8, t << 3);
     _hashblocks(st, x, r);
     for (let i = 0; i < 64; ++i) {
         out[i] = st[i];
@@ -1611,14 +1625,14 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @param m (partial) message
  */
 @global export function hashUpdate(st: Uint8Array, m: Uint8Array): void {
-    let r = load64(st, 64 + 128);
-    let t = load64(st, 64 + 128 + 8);
+    let r = load64_be(st, 64 + 128);
+    let t = load64_be(st, 64 + 128 + 8);
     let n = m.length;
 
     t += n;
     r = _hashUpdate(st, m, n, r as isize);
-    store64(st, 64 + 128, r as u64);
-    store64(st, 64 + 128 + 8, t as u64);
+    store64_be(st, 64 + 128, r as u64);
+    store64_be(st, 64 + 128 + 8, t as u64);
 }
 
 /**
@@ -1628,8 +1642,8 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  */
 @global export function hashFinal(st: Uint8Array): Uint8Array {
     let h = new Uint8Array(HASH_BYTES);
-    let r = load64(st, 64 + 128);
-    let t = load64(st, 64 + 128 + 8);
+    let r = load64_be(st, 64 + 128);
+    let t = load64_be(st, 64 + 128 + 8);
 
     _hashFinal(st, h, t as isize, r as isize);
 

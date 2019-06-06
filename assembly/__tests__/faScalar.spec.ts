@@ -20,8 +20,8 @@ describe("field arithmetic using scalars", (): void => {
     let one = new Uint8Array(32);
     one[0] = 1;
     let minus_one = faScalarNegate(one);
-    expect<u8>(minus_one[0]).toStrictEqual(236);
-    expect<u8>(minus_one[31]).toStrictEqual(16);
+    expect<u8>(minus_one[0]).toBe(236);
+    expect<u8>(minus_one[31]).toBe(16);
 
     let zero = new Uint8Array(32);
     let minus_one2 = faScalarSub(zero, one);
@@ -44,6 +44,6 @@ describe("field arithmetic using scalars", (): void => {
     expect<bool>(equals(x_plus_x_neg, zero)).toBeTruthy();
 
     let cof = faScalarCofactorMult(one);
-    expect<u8>(cof[0]).toStrictEqual(8);
+    expect<u8>(cof[0]).toBe(8);
   });
 });

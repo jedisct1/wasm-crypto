@@ -7,8 +7,8 @@
         "test": "asp"
     },
     "devDependencies": {
-        "assemblyscript": "github:AssemblyScript/assemblyscript",
-        "as-pect": "github:jtenner/as-pect"
+        "as-pect": "github:jtenner/as-pect",
+        "assemblyscript": "github:AssemblyScript/assemblyscript"
     },
     "types": "assembly/index"
 }

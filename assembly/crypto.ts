@@ -1,7 +1,6 @@
 // tslint:disable-next-line:no-reference
 /// <reference path="../node_modules/assemblyscript/index.d.ts" />
 
-import { LOAD, STORE } from 'internal/arraybuffer';
 import { precompBase } from './precomp';
 
 const RELEASE: bool = true;
@@ -587,9 +586,9 @@ function fe25519Pack(o: Fe25519Packed, n: Fe25519): void {
 }
 
 function fe25519Unpack(o: Fe25519, n: Fe25519Packed): void {
-    let nb = n.buffer;
+    let nb = changetype<usize>(n.buffer);
     for (let i = 0; i < 16; ++i) {
-        o[i] = LOAD<u16, i64>(nb, i);
+        o[i] = load<u16>(nb + i * 2);
     }
     o[15] &= 0x7fff;
 }

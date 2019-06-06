@@ -1,14 +1,14 @@
 {
     "scripts": {
-        "asbuild:untouched": "asc assembly/index.ts assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm --importMemory",
-        "asbuild:small": "asc assembly/index.ts assembly/crypto.ts assembly/precomp.ts -b build/small.wasm -t build/small.wat --sourceMap --validate -O3z --importMemory",
-        "asbuild:optimized": "asc assembly/index.ts assembly/crypto.ts assembly/precomp.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate -O3 --importMemory",
+        "asbuild:untouched": "asc assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm --importMemory",
+        "asbuild:small": "asc assembly/crypto.ts assembly/precomp.ts -b build/small.wasm -t build/small.wat --sourceMap --validate -O3z --importMemory",
+        "asbuild:optimized": "asc assembly/crypto.ts assembly/precomp.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate -O3 --importMemory",
         "asbuild": "npm run asbuild:optimized",
         "test": "asp"
     },
     "devDependencies": {
         "as-pect": "github:jtenner/as-pect",
-        "assemblyscript": "github:AssemblyScript/assemblyscript#v0.6"
+        "assemblyscript": "github:AssemblyScript/assemblyscript"
     },
     "types": "assembly/index"
 }

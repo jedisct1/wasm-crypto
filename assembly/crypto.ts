@@ -1,8 +1,8 @@
 // tslint:disable-next-line:no-reference
 /// <reference path="../node_modules/assemblyscript/index.d.ts" />
 
-import { LOAD, STORE } from 'internal/arraybuffer';
 import { precompBase } from './precomp';
+import { HEADER_SIZE } from 'internal/arraybuffer';
 
 const RELEASE: bool = true;
 
@@ -41,25 +41,11 @@ const RELEASE: bool = true;
 }
 
 function load64_be(x: Uint8Array, offset: isize): u64 {
-    return unchecked(x[offset + 7] as u64) |
-        unchecked(x[offset + 6] as u64) << 8 |
-        unchecked(x[offset + 5] as u64) << 16 |
-        unchecked(x[offset + 4] as u64) << 24 |
-        unchecked(x[offset + 3] as u64) << 32 |
-        unchecked(x[offset + 2] as u64) << 40 |
-        unchecked(x[offset + 1] as u64) << 48 |
-        unchecked(x[offset + 0] as u64) << 56;
+    return bswap(load<u64>(x.buffer.data + offset));
 }
 
 function store64_be(x: Uint8Array, offset: isize, u: u64): void {
-    x[offset + 7] = u as u8;
-    x[offset + 6] = (u >>> 8) as u8;
-    x[offset + 5] = (u >>> 16) as u8;
-    x[offset + 4] = (u >>> 24) as u8;
-    x[offset + 3] = (u >>> 32) as u8;
-    x[offset + 2] = (u >>> 40) as u8;
-    x[offset + 1] = (u >>> 48) as u8;
-    x[offset + 0] = (u >>> 56) as u8;
+    store<u64>(x.buffer.data + offset, bswap(u));
 }
 
 const K: u64[] = [
@@ -587,9 +573,9 @@ function fe25519Pack(o: Fe25519Packed, n: Fe25519): void {
 }
 
 function fe25519Unpack(o: Fe25519, n: Fe25519Packed): void {
-    let nb = n.buffer;
+    let nb = changetype<usize>(n.buffer) + HEADER_SIZE;
     for (let i = 0; i < 16; ++i) {
-        o[i] = LOAD<u16, i64>(nb, i);
+        o[i] = load<u16>(nb + 2 * i) as i64;
     }
     o[15] &= 0x7fff;
 }

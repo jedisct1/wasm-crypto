@@ -7,7 +7,7 @@
         "test": "asp"
     },
     "devDependencies": {
-        "as-pect": "github:jtenner/as-pect",
+        "as-pect": "github:jtenner/as-pect#pre-runtime",
         "assemblyscript": "github:AssemblyScript/assemblyscript#v0.6"
     },
     "types": "assembly/index"

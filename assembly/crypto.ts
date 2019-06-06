@@ -2,7 +2,6 @@
 /// <reference path="../node_modules/assemblyscript/index.d.ts" />
 
 import { precompBase } from './precomp';
-import { HEADER_SIZE } from 'internal/arraybuffer';
 
 const RELEASE: bool = true;
 
@@ -573,7 +572,7 @@ function fe25519Pack(o: Fe25519Packed, n: Fe25519): void {
 }
 
 function fe25519Unpack(o: Fe25519, n: Fe25519Packed): void {
-    let nb = changetype<usize>(n.buffer) + HEADER_SIZE;
+    let nb = changetype<usize>(n.buffer) + 8;;
     for (let i = 0; i < 16; ++i) {
         o[i] = load<u16>(nb + 2 * i) as i64;
     }

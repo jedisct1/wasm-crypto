@@ -1,8 +1,8 @@
 {
     "scripts": {
-        "asbuild:untouched": "asc assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm --importMemory",
-        "asbuild:small": "asc assembly/crypto.ts assembly/precomp.ts -b build/small.wasm -t build/small.wat --sourceMap --validate -O3z --importMemory",
-        "asbuild:optimized": "asc assembly/crypto.ts assembly/precomp.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate -O3 --importMemory",
+        "asbuild:untouched": "asc assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm",
+        "asbuild:small": "asc assembly/crypto.ts assembly/precomp.ts -b build/small.wasm -t build/small.wat --sourceMap --validate -O3z",
+        "asbuild:optimized": "asc assembly/crypto.ts assembly/precomp.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate -O3",
         "asbuild": "npm run asbuild:optimized",
         "test": "asp"
     },

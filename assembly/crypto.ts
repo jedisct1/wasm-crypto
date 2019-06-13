@@ -5,6 +5,8 @@ import { precompBase } from './precomp';
 
 const RELEASE: bool = true;
 
+export const U8ARRAY_ID = idof<Uint8Array>();
+
 // Helpers
 
 @inline function setU8(t: Uint8Array, s: Uint8Array, o: isize = 0): void {

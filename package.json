@@ -7,7 +7,7 @@
         "test": "asp --verbose"
     },
     "devDependencies": {
-        "as-pect": "github:jtenner/as-pect#fix-reporters",
+        "@as-pect/cli": "^2.2.0",
         "assemblyscript": "github:AssemblyScript/assemblyscript"
     },
     "types": "assembly/index"

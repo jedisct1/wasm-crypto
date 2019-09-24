@@ -1,13 +1,13 @@
 {
     "scripts": {
-        "asbuild:untouched": "asc assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm",
+        "asbuild:untouched": "asc assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm --validate",
         "asbuild:small": "asc assembly/crypto.ts assembly/precomp.ts -b build/small.wasm -t build/small.wat --sourceMap --validate -O3z",
         "asbuild:optimized": "asc assembly/crypto.ts assembly/precomp.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate -O3",
         "asbuild": "npm run asbuild:optimized",
         "test": "asp --verbose"
     },
     "devDependencies": {
-        "@as-pect/cli": "^2.2.0",
+        "@as-pect/cli": "^2.5.0",
         "assemblyscript": "github:AssemblyScript/assemblyscript"
     },
     "types": "assembly/index"

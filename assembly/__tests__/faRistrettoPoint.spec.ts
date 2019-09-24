@@ -20,20 +20,20 @@ describe("Ristretto arithmetic", (): void => {
         expect<bool>(faPointValidate(p2)).toBeFalsy();
         p2[0]--;
 
-        let p3 = faPointAdd(p, p);
-        p3 = faPointAdd(p3, p3);
+        let p3 = faPointAdd(p, p)!;
+        p3 = faPointAdd(p3, p3)!;
 
         let scalar3 = new Uint8Array(32);
         scalar3[0] = 4;
-        let p4 = faPointMult(scalar3, p);
+        let p4 = faPointMult(scalar3, p)!;
         expect<bool>(equals(p3, p4)).toBeTruthy();
 
-        p3 = faPointSub(p3, p);
-        p3 = faPointSub(p3, p);
-        p3 = faPointSub(p3, p);
+        p3 = faPointSub(p3, p)!;
+        p3 = faPointSub(p3, p)!;
+        p3 = faPointSub(p3, p)!;
         expect<bool>(equals(p3, p)).toBeTruthy();
 
-        let zero = faPointSub(p3, p);
+        let zero = faPointSub(p3, p)!;
         expect<bool>(faPointValidate(zero)).toBeFalsy();
     });
 });

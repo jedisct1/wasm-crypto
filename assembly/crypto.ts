@@ -266,6 +266,9 @@ _L[31] = 16;
 function scIsLtL(s: ScalarPacked): bool {
     let c: u8 = 0, n: u8 = 1, i = 32;
 
+    if ((unchecked(s[31]) & 0xf0) === 0) {
+        return false;
+    }
     do {
         i--;
         let l = unchecked(_L[i]) as u8;
@@ -507,16 +510,16 @@ let SQDMONE = fe25519([
 ]);
 
 @inline function fe25519Copy(r: Fe25519, a: Fe25519): void {
-    unchecked(r[0]  = a[0]);
-    unchecked(r[1]  = a[1]);
-    unchecked(r[2]  = a[2]);
-    unchecked(r[3]  = a[3]);
-    unchecked(r[4]  = a[4]);
-    unchecked(r[5]  = a[5]);
-    unchecked(r[6]  = a[6]);
-    unchecked(r[7]  = a[7]);
-    unchecked(r[8]  = a[8]);
-    unchecked(r[9]  = a[9]);
+    unchecked(r[0] = a[0]);
+    unchecked(r[1] = a[1]);
+    unchecked(r[2] = a[2]);
+    unchecked(r[3] = a[3]);
+    unchecked(r[4] = a[4]);
+    unchecked(r[5] = a[5]);
+    unchecked(r[6] = a[6]);
+    unchecked(r[7] = a[7]);
+    unchecked(r[8] = a[8]);
+    unchecked(r[9] = a[9]);
     unchecked(r[10] = a[10]);
     unchecked(r[11] = a[11]);
     unchecked(r[12] = a[12]);
@@ -527,16 +530,16 @@ let SQDMONE = fe25519([
 
 @inline function fe25519Cmov(p: Fe25519, q: Fe25519, b: i64): void {
     let mask = ~(b - 1);
-    unchecked(p[0]  ^= (p[0]  ^ q[0])  & mask);
-    unchecked(p[1]  ^= (p[1]  ^ q[1])  & mask);
-    unchecked(p[2]  ^= (p[2]  ^ q[2])  & mask);
-    unchecked(p[3]  ^= (p[3]  ^ q[3])  & mask);
-    unchecked(p[4]  ^= (p[4]  ^ q[4])  & mask);
-    unchecked(p[5]  ^= (p[5]  ^ q[5])  & mask);
-    unchecked(p[6]  ^= (p[6]  ^ q[6])  & mask);
-    unchecked(p[7]  ^= (p[7]  ^ q[7])  & mask);
-    unchecked(p[8]  ^= (p[8]  ^ q[8])  & mask);
-    unchecked(p[9]  ^= (p[9]  ^ q[9])  & mask);
+    unchecked(p[0] ^= (p[0] ^ q[0]) & mask);
+    unchecked(p[1] ^= (p[1] ^ q[1]) & mask);
+    unchecked(p[2] ^= (p[2] ^ q[2]) & mask);
+    unchecked(p[3] ^= (p[3] ^ q[3]) & mask);
+    unchecked(p[4] ^= (p[4] ^ q[4]) & mask);
+    unchecked(p[5] ^= (p[5] ^ q[5]) & mask);
+    unchecked(p[6] ^= (p[6] ^ q[6]) & mask);
+    unchecked(p[7] ^= (p[7] ^ q[7]) & mask);
+    unchecked(p[8] ^= (p[8] ^ q[8]) & mask);
+    unchecked(p[9] ^= (p[9] ^ q[9]) & mask);
     unchecked(p[10] ^= (p[10] ^ q[10]) & mask);
     unchecked(p[11] ^= (p[11] ^ q[11]) & mask);
     unchecked(p[12] ^= (p[12] ^ q[12]) & mask);
@@ -833,16 +836,16 @@ function scalarmult(p: Ge, s: ScalarPacked, q: Ge): void {
 }
 
 @inline function fe25519CopyPrecomp(r: Fe25519, a: i64[]): void {
-    unchecked(r[0]  = a[0]);
-    unchecked(r[1]  = a[1]);
-    unchecked(r[2]  = a[2]);
-    unchecked(r[3]  = a[3]);
-    unchecked(r[4]  = a[4]);
-    unchecked(r[5]  = a[5]);
-    unchecked(r[6]  = a[6]);
-    unchecked(r[7]  = a[7]);
-    unchecked(r[8]  = a[8]);
-    unchecked(r[9]  = a[9]);
+    unchecked(r[0] = a[0]);
+    unchecked(r[1] = a[1]);
+    unchecked(r[2] = a[2]);
+    unchecked(r[3] = a[3]);
+    unchecked(r[4] = a[4]);
+    unchecked(r[5] = a[5]);
+    unchecked(r[6] = a[6]);
+    unchecked(r[7] = a[7]);
+    unchecked(r[8] = a[8]);
+    unchecked(r[9] = a[9]);
     unchecked(r[10] = a[10]);
     unchecked(r[11] = a[11]);
     unchecked(r[12] = a[12]);

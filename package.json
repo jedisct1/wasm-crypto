@@ -1,4 +1,6 @@
 {
+    "name": "wasm-crypto",
+    "version": "0.0.1",
     "scripts": {
         "asbuild:untouched": "asc assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm --validate",
         "asbuild:small": "asc assembly/crypto.ts assembly/precomp.ts -b build/small.wasm -t build/small.wat --sourceMap --validate -O3z",

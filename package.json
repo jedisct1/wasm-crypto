@@ -10,7 +10,7 @@
     },
     "devDependencies": {
         "@as-pect/cli": "^2.5.0",
-        "assemblyscript": "github:AssemblyScript/assemblyscript"
+        "assemblyscript": "^0.9.4"
     },
     "types": "assembly/index"
 }

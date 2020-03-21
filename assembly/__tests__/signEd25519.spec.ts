@@ -1,3 +1,5 @@
+type aisize = i32;
+
 describe("Ed25529 signature", (): void => {
     it("should sign and verify using Ed25519", (): void => {
         let seed = new Uint8Array(32);
@@ -10,10 +12,10 @@ describe("Ed25529 signature", (): void => {
             msg[i] = i;
         }
         let signature = signEd(msg, kp);
-        expect<Uint8Array>(signature).toHaveLength(SIGN_ED_BYTES);
+        expect<Uint8Array>(signature).toHaveLength(<aisize>SIGN_ED_BYTES);
 
         let pk = signEdPublicKey(kp);
-        expect<Uint8Array>(pk).toHaveLength(SIGN_ED_PUBLICKEYBYTES);
+        expect<Uint8Array>(pk).toHaveLength(<aisize>SIGN_ED_PUBLICKEYBYTES);
 
         let verified = signEdVerify(signature, msg, pk);
         expect<bool>(verified).toBeTruthy();

@@ -1,3 +1,5 @@
+type aisize = i32;
+
 describe("Ristretto signature", (): void => {
     it("should sign and verify using Ristretto", (): void => {
         let seed = new Uint8Array(32);
@@ -10,10 +12,10 @@ describe("Ristretto signature", (): void => {
             msg[i] = i;
         }
         let signature = sign(msg, kp);
-        expect<Uint8Array>(signature).toHaveLength(SIGN_BYTES);
+        expect<Uint8Array>(signature).toHaveLength(<aisize>SIGN_BYTES);
 
         let pk = signPublicKey(kp);
-        expect<Uint8Array>(pk).toHaveLength(SIGN_PUBLICKEYBYTES);
+        expect<Uint8Array>(pk).toHaveLength(<aisize>SIGN_PUBLICKEYBYTES);
 
         let verified = signVerify(signature, msg, pk);
         expect<bool>(verified).toBeTruthy();

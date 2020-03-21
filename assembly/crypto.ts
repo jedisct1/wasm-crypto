@@ -5,13 +5,15 @@ import { precompBase } from './precomp';
 
 const RELEASE: bool = true;
 
+type aisize = i32;
+
 export const U8ARRAY_ID = idof<Uint8Array>();
 
 // Helpers
 
 @inline function setU8(t: Uint8Array, s: Uint8Array, o: isize = 0): void {
     for (let i: isize = 0, len = s.length; i < len; ++i) {
-        t[i + o] = unchecked(s[i]);
+        t[<aisize>(i + o)] = unchecked(s[<aisize>i]);
     }
 }
 
@@ -138,10 +140,10 @@ function _hashInit(): Uint8Array {
 
 function _hashUpdate(st: Uint8Array, m: Uint8Array, n: isize, r: isize): isize {
     let w = st.subarray(64);
-    let av = 128 - r;
+    let av = <isize>128 - r;
     let tc = min(n, av);
 
-    setU8(w, m.subarray(0, tc), r);
+    setU8(w, m.subarray(0, <aisize>tc), r);
     r += tc;
     n -= tc;
     let pos = tc;
@@ -150,9 +152,9 @@ function _hashUpdate(st: Uint8Array, m: Uint8Array, n: isize, r: isize): isize {
         r = 0;
     }
     if (r === 0 && n > 0) {
-        let rb = _hashblocks(st, m.subarray(pos), n);
+        let rb = _hashblocks(st, m.subarray(<aisize>pos), n);
         if (rb > 0) {
-            setU8(w, m.subarray(pos + n - rb));
+            setU8(w, m.subarray(<aisize>(pos + n - rb)));
             r = rb;
         }
     }
@@ -163,10 +165,10 @@ function _hashFinal(st: Uint8Array, out: Uint8Array, t: isize, r: isize): void {
     let w = st.subarray(64);
     let x = new Uint8Array(256);
 
-    setU8(x, w.subarray(0, r));
-    x[r] = 128;
+    setU8(x, w.subarray(0, <aisize>r));
+    x[<aisize>r] = 128;
     r = 256 - (isize(r < 112) << 7);
-    x[r - 9] = 0;
+    x[<aisize>(r - 9)] = 0;
     store64_be(x, r - 8, t << 3);
     _hashblocks(st, x, r);
     for (let i = 0; i < 64; ++i) {
@@ -357,7 +359,7 @@ function scSq(o: Scalar, a: Scalar): void {
 }
 
 function scSqMult(y: Scalar, squarings: isize, x: Scalar): void {
-    for (let i = 0; i < squarings; ++i) {
+    for (let i = <isize>0; i < squarings; ++i) {
         scSq(y, y);
     }
     scMult(y, y, x);
@@ -1449,7 +1451,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns Signature
  */
 @global export function sign(m: Uint8Array, kp: Uint8Array, Z: Uint8Array | null = null): Uint8Array {
-    let sig = new Uint8Array(SIGN_BYTES);
+    let sig = new Uint8Array(<aisize>SIGN_BYTES);
     _signDetached(sig, m, kp, Z);
 
     return sig;
@@ -1463,10 +1465,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns `true` on success
  */
 @global export function signVerify(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bool {
-    if (sig.length !== SIGN_BYTES) {
+    if (<isize>sig.length !== SIGN_BYTES) {
         throw new Error('bad signature size');
     }
-    if (pk.length !== SIGN_PUBLICKEYBYTES) {
+    if (<isize>pk.length !== SIGN_PUBLICKEYBYTES) {
         throw new Error('bad public key size');
     }
     return _signVerifyDetached(sig, m, pk);
@@ -1478,10 +1480,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns Key pair
  */
 @global export function signKeypairFromSeed(seed: Uint8Array): Uint8Array {
-    if (seed.length !== SIGN_SEEDBYTES) {
+    if (<isize>seed.length !== SIGN_SEEDBYTES) {
         throw new Error('bad seed size');
     }
-    let kp = new Uint8Array(SIGN_KEYPAIRBYTES);
+    let kp = new Uint8Array(<aisize>SIGN_KEYPAIRBYTES);
     for (let i = 0; i < 32; ++i) {
         kp[i] = seed[i];
     }
@@ -1497,10 +1499,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  */
 @global export function signPublicKey(kp: Uint8Array): Uint8Array {
     const len = SIGN_PUBLICKEYBYTES;
-    let pk = new Uint8Array(len);
+    let pk = new Uint8Array(<aisize>len);
 
-    for (let i = 0; i < len; ++i) {
-        pk[i] = kp[i + 32];
+    for (let i = <isize>0; i < len; ++i) {
+        pk[<aisize>i] = kp[<aisize>(i + 32)];
     }
     return pk;
 }
@@ -1512,10 +1514,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  */
 @global export function signSecretKey(kp: Uint8Array): Uint8Array {
     const len = SIGN_SECRETKEYBYTES;
-    let sk = new Uint8Array(len);
+    let sk = new Uint8Array(<aisize>len);
 
-    for (let i = 0; i < len; ++i) {
-        sk[i] = kp[i];
+    for (let i = <isize>0; i < len; ++i) {
+        sk[<aisize>i] = kp[<aisize>i];
     }
     return sk;
 }
@@ -1529,7 +1531,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns Signature
  */
 @global export function signEd(m: Uint8Array, kp: Uint8Array, Z: Uint8Array | null = null): Uint8Array {
-    let sig = new Uint8Array(SIGN_ED_BYTES);
+    let sig = new Uint8Array(<aisize>SIGN_ED_BYTES);
     _signEdDetached(sig, m, kp, Z);
 
     return sig;
@@ -1543,10 +1545,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns `true` on success
  */
 @global export function signEdVerify(sig: Uint8Array, m: Uint8Array, pk: Uint8Array): bool {
-    if (sig.length !== SIGN_ED_BYTES) {
+    if (<isize>sig.length !== SIGN_ED_BYTES) {
         throw new Error('bad signature size');
     }
-    if (pk.length !== SIGN_ED_PUBLICKEYBYTES) {
+    if (<isize>pk.length !== SIGN_ED_PUBLICKEYBYTES) {
         throw new Error('bad public key size');
     }
     return _signEdVerifyDetached(sig, m, pk);
@@ -1558,10 +1560,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns Key pair
  */
 @global export function signEdKeypairFromSeed(seed: Uint8Array): Uint8Array {
-    if (seed.length !== SIGN_ED_SEEDBYTES) {
+    if (<isize>seed.length !== SIGN_ED_SEEDBYTES) {
         throw new Error('bad seed size');
     }
-    let kp = new Uint8Array(SIGN_ED_KEYPAIRBYTES);
+    let kp = new Uint8Array(<aisize>SIGN_ED_KEYPAIRBYTES);
     for (let i = 0; i < 32; ++i) {
         kp[i] = seed[i];
     }
@@ -1577,10 +1579,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  */
 @global export function signEdPublicKey(kp: Uint8Array): Uint8Array {
     const len = SIGN_ED_PUBLICKEYBYTES;
-    let pk = new Uint8Array(len);
+    let pk = new Uint8Array(<aisize>len);
 
-    for (let i = 0; i < len; ++i) {
-        pk[i] = kp[i + 32];
+    for (let i = <isize>0; i < len; ++i) {
+        pk[<aisize>i] = kp[<aisize>(i + 32)];
     }
     return pk;
 }
@@ -1592,10 +1594,10 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  */
 @global export function signEdSecretKey(kp: Uint8Array): Uint8Array {
     const len = SIGN_ED_SECRETKEYBYTES;
-    let sk = new Uint8Array(len);
+    let sk = new Uint8Array(<aisize>len);
 
-    for (let i = 0; i < len; ++i) {
-        sk[i] = kp[i];
+    for (let i = <isize>0; i < len; ++i) {
+        sk[<aisize>i] = kp[<aisize>i];
     }
     return sk;
 }
@@ -1630,7 +1632,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns Hash
  */
 @global export function hashFinal(st: Uint8Array): Uint8Array {
-    let h = new Uint8Array(HASH_BYTES);
+    let h = new Uint8Array(<aisize>HASH_BYTES);
     let r = load64_be(st, 64 + 128);
     let t = load64_be(st, 64 + 128 + 8);
 
@@ -2064,7 +2066,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
     if ((hex_len & 1) !== 0) {
         return null;
     }
-    let bin = new Uint8Array(hex_len / 2);
+    let bin = new Uint8Array(<aisize>(hex_len / 2));
     let c_acc = 0;
     let bin_pos = 0;
     let state = false;

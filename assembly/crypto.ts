@@ -83,7 +83,7 @@ function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
         z[i] = a[i] = load64_be(st, i << 3);
     }
     let pos = 0;
-    while (n >= 128) {
+    for (let n = n; n >= 128; n -= 128) {
         for (let i = 0; i < 16; ++i) {
             w[i] = load64_be(m, (i << 3) + pos);
         }
@@ -108,7 +108,6 @@ function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
             z[i] = a[i];
         }
         pos += 128;
-        n -= 128;
     }
     for (let i = 0; i < 8; ++i) {
         store64_be(st, i << 3, z[i]);

@@ -529,7 +529,8 @@ let SQDMONE = fe25519([
     unchecked(r[15] = a[15]);
 }
 
-@inline function fe25519Cmov(p: Fe25519, q: Fe25519, b: i64): void {
+// @inline // -- commenting out this @inline attr causes exponential compilation time
+function fe25519Cmov(p: Fe25519, q: Fe25519, b: i64): void {
     let mask = ~(b - 1);
     unchecked(p[0] ^= (p[0] ^ q[0]) & mask);
     unchecked(p[1] ^= (p[1] ^ q[1]) & mask);

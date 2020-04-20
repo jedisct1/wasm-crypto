@@ -1,3 +1,5 @@
+![GitHub Actions CI](https://github.com/jedisct1/wasm-crypto/workflows/GitHub%20Actions%20CI/badge.svg)
+
 # ![wasm-crypto](https://raw.github.com/jedisct1/wasm-crypto/master/logo.png)
 
 A WebAssembly (via AssemblyScript) set of cryptographic primitives for building authentication and key exchange protocols.

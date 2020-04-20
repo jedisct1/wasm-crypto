@@ -13,6 +13,7 @@ module.exports = {
   flags: {
     "--validate": [],
     "--debug": [],
+    "-O3": [],
 
     /** This is required. Do not change this. */
     "--binaryFile": ["output.wasm"],

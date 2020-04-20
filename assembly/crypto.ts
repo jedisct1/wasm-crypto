@@ -75,10 +75,10 @@ const K: u64[] = [
 ];
 
 function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
-    let z = new Uint64Array(8),
-        b = new Uint64Array(8),
-        a = new Uint64Array(8),
-        w = new Uint64Array(16),
+    let z = new StaticArray<u64>(8),
+        b = new StaticArray<u64>(8),
+        a = new StaticArray<u64>(8),
+        w = new StaticArray<u64>(16),
         t: u64;
 
     for (let i = 0; i < 8; ++i) {
@@ -124,7 +124,7 @@ const iv_: u8[] = [
     0x1f, 0x83, 0xd9, 0xab, 0xfb, 0x41, 0xbd, 0x6b, 0x5b, 0xe0, 0xcd, 0x19, 0x13, 0x7e, 0x21, 0x79,
 ];
 
-let iv = new Uint8Array(64);
+let iv = new StaticArray<u8>(64);
 for (let i = 0; i < 64; ++i) {
     iv[i] = iv_[i];
 }
@@ -229,12 +229,12 @@ function allZeros(x: Uint8Array): bool {
 
 // mod(2^252 + 27742317777372353535851937790883648495) field arithmetic
 
-type Scalar = Int64Array(64);
+type Scalar = StaticArray<i64>(64);
 type ScalarPacked = Uint8Array(32);
 type ScalarDouble = Uint8Array(64);
 
 @inline function newScalar(): Scalar {
-    return new Int64Array(64);
+    return new StaticArray<i64>(64);
 }
 
 @inline function newScalarPacked(): ScalarPacked {
@@ -245,7 +245,7 @@ type ScalarDouble = Uint8Array(64);
     return new Uint8Array(64);
 }
 
-let _L: Int64Array = new Int64Array(32);
+let _L: StaticArray<i64> = new StaticArray<i64>(32);
 _L[0] = 237;
 _L[1] = 211;
 _L[2] = 245;
@@ -452,11 +452,11 @@ function scSub(a: Uint8Array, b: Uint8Array): void {
 // mod(2^255-19) field arithmetic - Doesn't use 51-bit limbs yet to keep the
 // code short and simple
 
-type Fe25519 = Int64Array(16);
+type Fe25519 = StaticArray<i64>(16);
 type Fe25519Packed = Uint8Array(32);
 
 @inline function newFe25519(): Fe25519 {
-    return new Int64Array(16);
+    return new StaticArray<i64>(16);
 }
 
 @inline function newFe25519Packed(): Fe25519Packed {
@@ -662,7 +662,7 @@ function fe25519Carry(o: Fe25519): void {
 }
 
 function fe25519Mult(o: Fe25519, a: Fe25519, b: Fe25519): void {
-    let t = new Int64Array(31 + 1);
+    let t = new StaticArray<i64>(31 + 1);
 
     for (let i = 0; i < 16; ++i) {
         let ai = a[i];
@@ -1192,7 +1192,7 @@ function _signEdDetached(sig: Signature, m: Uint8Array, kp: KeyPair, Z: Uint8Arr
     let az = new Uint8Array(64);
     let nonce = newScalarDouble();
     let hram = newScalarDouble();
-    let x = new Int64Array(64);
+    let x = newScalar();
     let mlen = m.length;
     let hs = _hashInit();
     let r: isize = 0;
@@ -1270,7 +1270,7 @@ function _signDetached(sig: Signature, m: Uint8Array, kp: KeyPair, Z: Uint8Array
     let az = new Uint8Array(64);
     let nonce = newScalarDouble();
     let hram = newScalarDouble();
-    let x = new Int64Array(64);
+    let x = newScalar();
     let mlen = m.length;
     let hs = _hashInit();
     let r: isize = 0;

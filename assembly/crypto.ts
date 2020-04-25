@@ -987,8 +987,9 @@ function ristrettoIsCanonical(s: GePacked): bool {
     }
     c = (c - 1) >> 8;
     let d = (0xed as u64 - 1 as u64 - (s[0] as u64)) >> 8;
+    let e = s[31] >> 7;
 
-    return (1 - (((c & d) | s[0]) & 1)) as bool;
+    return (1 - (((c & d) | e | s[0]) & 1)) as bool;
 }
 
 function ristrettoUnpack(h: Ge, s: GePacked, neg: bool = false): bool {

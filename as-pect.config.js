@@ -11,7 +11,6 @@ module.exports = {
    * All the compiler flags needed for this test suite. Make sure that a binary file is output.
    */
   flags: {
-    "--validate": [],
     "--debug": [],
     "-O3": [],
 

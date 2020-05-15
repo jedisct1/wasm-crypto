@@ -2,15 +2,15 @@
     "name": "wasm-crypto",
     "version": "0.0.3",
     "scripts": {
-        "asbuild:untouched": "asc assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm --validate",
-        "asbuild:small": "asc assembly/crypto.ts assembly/precomp.ts -b build/small.wasm -t build/small.wat --sourceMap --validate -O3z",
-        "asbuild:optimized": "asc assembly/crypto.ts assembly/precomp.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate -O3",
+        "asbuild:untouched": "asc assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm",
+        "asbuild:small": "asc assembly/crypto.ts assembly/precomp.ts -b build/small.wasm -t build/small.wat --sourceMap -O3z",
+        "asbuild:optimized": "asc assembly/crypto.ts assembly/precomp.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap -O3",
         "asbuild": "npm run asbuild:optimized",
         "test": "asp --verbose"
     },
     "devDependencies": {
-        "@as-pect/cli": "^3.1.3",
-        "assemblyscript": "^0.9.4"
+        "@as-pect/cli": "^3.1.6",
+        "assemblyscript": "^0.10.0"
     },
     "types": "assembly/index",
     "author": "Frank Denis <j at pureftpd dot org>",

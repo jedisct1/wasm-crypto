@@ -12,9 +12,7 @@ export const U8ARRAY_ID = idof<Uint8Array>();
 // Helpers
 
 @inline function setU8(t: Uint8Array, s: Uint8Array, o: isize = 0): void {
-    for (let i: isize = 0, len = s.length; i < len; ++i) {
-        t[<aisize>(i + o)] = unchecked(s[<aisize>i]);
-    }
+    memory.copy(t.dataStart + o, s.dataStart, s.length);
 }
 
 // SHA512
@@ -511,22 +509,7 @@ let SQDMONE = fe25519([
 ]);
 
 @inline function fe25519Copy(r: Fe25519, a: Fe25519): void {
-    unchecked(r[0] = a[0]);
-    unchecked(r[1] = a[1]);
-    unchecked(r[2] = a[2]);
-    unchecked(r[3] = a[3]);
-    unchecked(r[4] = a[4]);
-    unchecked(r[5] = a[5]);
-    unchecked(r[6] = a[6]);
-    unchecked(r[7] = a[7]);
-    unchecked(r[8] = a[8]);
-    unchecked(r[9] = a[9]);
-    unchecked(r[10] = a[10]);
-    unchecked(r[11] = a[11]);
-    unchecked(r[12] = a[12]);
-    unchecked(r[13] = a[13]);
-    unchecked(r[14] = a[14]);
-    unchecked(r[15] = a[15]);
+    memory.copy(changetype<usize>(r), changetype<usize>(a), sizeof<i64>() * 16);
 }
 
 // @inline // -- commenting out this @inline attr causes exponential compilation time
@@ -838,22 +821,7 @@ function scalarmult(p: Ge, s: ScalarPacked, q: Ge): void {
 }
 
 @inline function fe25519CopyPrecomp(r: Fe25519, a: i64[]): void {
-    unchecked(r[0] = a[0]);
-    unchecked(r[1] = a[1]);
-    unchecked(r[2] = a[2]);
-    unchecked(r[3] = a[3]);
-    unchecked(r[4] = a[4]);
-    unchecked(r[5] = a[5]);
-    unchecked(r[6] = a[6]);
-    unchecked(r[7] = a[7]);
-    unchecked(r[8] = a[8]);
-    unchecked(r[9] = a[9]);
-    unchecked(r[10] = a[10]);
-    unchecked(r[11] = a[11]);
-    unchecked(r[12] = a[12]);
-    unchecked(r[13] = a[13]);
-    unchecked(r[14] = a[14]);
-    unchecked(r[15] = a[15]);
+    memory.copy(changetype<usize>(r), a.dataStart, sizeof<i64>() * 16);
 }
 
 function scalarmultBase(p: Ge, s: ScalarPacked): void {

@@ -1751,6 +1751,15 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
 }
 
 /**
+ * Check whether a scalar is in canonical form.
+ * @param x Scalar
+ * @returns true` is the scalar is in canonical form
+ */
+@global export function faScalarIsCanonical(x: Uint8Array): bool {
+    return scIsLtL(x);
+}
+
+/**
  * Compute `x * y (mod L)`
  * @param x Scalar
  * @param y Scalar

@@ -45,5 +45,7 @@ describe("field arithmetic using scalars", (): void => {
 
     let cof = faScalarCofactorMult(one);
     expect<u8>(cof[0]).toBe(8);
+
+    expect<bool>(faScalarIsCanonical(x)).toBeTruthy();
   });
 });

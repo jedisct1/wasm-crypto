@@ -9,7 +9,7 @@
         "test": "asp --verbose"
     },
     "devDependencies": {
-        "@as-pect/cli": "^3.2.0",
+        "@as-pect/cli": "^3.2.3",
         "assemblyscript": "^0.10.0"
     },
     "types": "assembly/index",

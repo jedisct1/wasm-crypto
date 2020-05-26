@@ -369,57 +369,56 @@ function scInverse(s: Uint8Array): Uint8Array {
     for (let i = 0; i < 32; ++i) {
         _1[i] = s[i];
     }
-    let _10 = newScalar(),
-        _100 = newScalar(),
-        _11 = newScalar(),
-        _101 = newScalar(),
-        _111 = newScalar(),
-        _1001 = newScalar(),
-        _1011 = newScalar(),
-        _1111 = newScalar(),
-        y = newScalar();
+    let _10 = newScalar(), _100 = newScalar(), _1000 = newScalar(), _10000 = newScalar(), _100000 = newScalar(),
+        _1000000 = newScalar(), _10010011 = newScalar(), _10010111 = newScalar(), _100110 = newScalar(), _1010 = newScalar(),
+        _1010000 = newScalar(), _1010011 = newScalar(), _1011 = newScalar(), _10110 = newScalar(), _10111101 = newScalar(),
+        _11 = newScalar(), _1100011 = newScalar(), _1100111 = newScalar(), _11010011 = newScalar(), _1101011 = newScalar(),
+        _11100111 = newScalar(), _11101011 = newScalar(), _11110101 = newScalar(), recip = newScalar();
 
     scSq(_10, _1);
-    scSq(_100, _10);
-    scMult(_11, _10, _1);
-    scMult(_101, _10, _11);
-    scMult(_111, _10, _101);
-    scMult(_1001, _10, _111);
-    scMult(_1011, _10, _1001);
-    scMult(_1111, _100, _1011);
-    scMult(y, _1111, _1);
+    scMult(_11, _1, _10);
+    scMult(_100, _1, _11);
+    scSq(_1000, _100);
+    scMult(_1010, _10, _1000);
+    scMult(_1011, _1, _1010);
+    scSq(_10000, _1000);
+    scSq(_10110, _1011);
+    scMult(_100000, _1010, _10110);
+    scMult(_100110, _10000, _10110);
+    scSq(_1000000, _100000);
+    scMult(_1010000, _10000, _1000000);
+    scMult(_1010011, _11, _1010000);
+    scMult(_1100011, _10000, _1010011);
+    scMult(_1100111, _100, _1100011);
+    scMult(_1101011, _100, _1100111);
+    scMult(_10010011, _1000000, _1010011);
+    scMult(_10010111, _100, _10010011);
+    scMult(_10111101, _100110, _10010111);
+    scMult(_11010011, _10110, _10111101);
+    scMult(_11100111, _1010000, _10010111);
+    scMult(_11101011, _100, _11100111);
+    scMult(_11110101, _1010, _11101011);
 
-    scSqMult(y, 123 + 3, _101);
-    scSqMult(y, 2 + 2, _11);
-    scSqMult(y, 1 + 4, _1111);
-    scSqMult(y, 1 + 4, _1111);
-    scSqMult(y, 4, _1001);
-    scSqMult(y, 2, _11);
-    scSqMult(y, 1 + 4, _1111);
-    scSqMult(y, 1 + 3, _101);
-    scSqMult(y, 3 + 3, _101);
-    scSqMult(y, 3, _111);
-    scSqMult(y, 1 + 4, _1111);
-    scSqMult(y, 2 + 3, _111);
-    scSqMult(y, 2 + 2, _11);
-    scSqMult(y, 1 + 4, _1011);
-    scSqMult(y, 2 + 4, _1011);
-    scSqMult(y, 6 + 4, _1001);
-    scSqMult(y, 2 + 2, _11);
-    scSqMult(y, 3 + 2, _11);
-    scSqMult(y, 3 + 2, _11);
-    scSqMult(y, 1 + 4, _1001);
-    scSqMult(y, 1 + 3, _111);
-    scSqMult(y, 2 + 4, _1111);
-    scSqMult(y, 1 + 4, _1011);
-    scSqMult(y, 3, _101);
-    scSqMult(y, 2 + 4, _1111);
-    scSqMult(y, 3, _101);
-    scSqMult(y, 1 + 2, _11);
+    scMult(recip, _1011, _11110101);
+    scSqMult(recip, 126, _1010011);
+    scSqMult(recip, 9, _10);
+    scMult(recip, recip, _11110101);
+    scSqMult(recip, 7, _1100111);
+    scSqMult(recip, 9, _11110101);
+    scSqMult(recip, 11, _10111101);
+    scSqMult(recip, 8, _11100111);
+    scSqMult(recip, 9, _1101011);
+    scSqMult(recip, 6, _1011);
+    scSqMult(recip, 14, _10010011);
+    scSqMult(recip, 10, _1100011);
+    scSqMult(recip, 9, _10010111);
+    scSqMult(recip, 10, _11110101);
+    scSqMult(recip, 8, _11010011);
+    scSqMult(recip, 8, _11101011);
 
     for (let i = 0; i < 32; ++i) {
-        y[i + 1] += y[i] >> 8;
-        res[i] = y[i] as u8;
+        recip[i + 1] += recip[i] >> 8;
+        res[i] = recip[i] as u8;
     }
     return res;
 }

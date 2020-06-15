@@ -72,7 +72,7 @@ const K: u64[] = [
     0x4cc5d4becb3e42b6, 0x597f299cfc657e2a, 0x5fcb6fab3ad6faec, 0x6c44198c4a475817,
 ];
 
-function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
+function _hashblocks(st: Uint8Array, m: Uint8Array, n_: isize): isize {
     let z = new StaticArray<u64>(8),
         b = new StaticArray<u64>(8),
         a = new StaticArray<u64>(8),
@@ -82,8 +82,8 @@ function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
     for (let i = 0; i < 8; ++i) {
         z[i] = a[i] = load64_be(st, i << 3);
     }
-    let pos = 0;
-    for (let n = n; n >= 128; n -= 128) {
+    let pos = 0, n = n_;
+    while (n >= 128) {
         for (let i = 0; i < 16; ++i) {
             w[i] = load64_be(m, (i << 3) + pos);
         }
@@ -108,6 +108,7 @@ function _hashblocks(st: Uint8Array, m: Uint8Array, n: isize): isize {
             z[i] = a[i];
         }
         pos += 128;
+        n -= 128;
     }
     for (let i = 0; i < 8; ++i) {
         store64_be(st, i << 3, z[i]);
@@ -1071,12 +1072,12 @@ function ristrettoElligator(p: Ge, t: Fe25519): void {
     fe25519Sub(v, c, v);
     fe25519Mult(v, v, rpd);
 
-    let wasnt_square = 1 - (ristrettoSqrtRatioM1(s, u, v) as i64);
+    let not_square = 1 - (ristrettoSqrtRatioM1(s, u, v) as i64);
     fe25519Mult(s_prime, s, t);
     fe25519Abs(s_prime, s_prime);
     fe25519Sub(s_prime, fe25519_0, s_prime);
-    fe25519Cmov(s, s_prime, wasnt_square);
-    fe25519Cmov(c, r, wasnt_square);
+    fe25519Cmov(s, s_prime, not_square);
+    fe25519Cmov(c, r, not_square);
 
     fe25519Sub(n, r, fe25519_1);
     fe25519Mult(n, n, c);

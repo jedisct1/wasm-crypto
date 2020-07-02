@@ -10,7 +10,7 @@
     },
     "devDependencies": {
         "@as-pect/cli": "^4.0.0",
-        "assemblyscript": "^0.13.0"
+        "assemblyscript": "^0.13.1"
     },
     "types": "assembly/index",
     "author": "Frank Denis <j at pureftpd dot org>",

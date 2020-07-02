@@ -702,7 +702,7 @@ class Ge {
     z: Fe25519;
     t: Fe25519;
 
-    constructor() {
+    @inline constructor() {
         this.x = newFe25519();
         this.y = newFe25519();
         this.z = newFe25519();

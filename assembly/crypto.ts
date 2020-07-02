@@ -695,7 +695,7 @@ function fe25519Pow2523(o: Fe25519, i: Fe25519): void {
 
 // Ed25519 group arithmetic
 
-@sealed @unmanaged
+@final @unmanaged
 class Ge {
     x: Fe25519;
     y: Fe25519;
@@ -836,7 +836,7 @@ function scalarmultBase(p: Ge, s: ScalarPacked): void {
 
     fe25519Copy(q.z, fe25519_1);
 
-    let precomp_base = precompBase();
+    let precomp_base = precompBase;
     for (let i = 0; i <= 255; ++i) {
         b = (s[(i >>> 3)] >>> (i as u8 & 7)) & 1;
         let precomp = precomp_base[i];

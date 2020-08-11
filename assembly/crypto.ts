@@ -873,8 +873,7 @@ function unpack(r: Ge, p: GePacked, neg: bool = false): bool {
     fe25519Mult(t, t, den);
     fe25519Pow2523(t, t);
     fe25519Mult(t, t, num);
-    fe25519Mult(t, t, den);
-    fe25519Mult(t, t, den);
+    fe25519Mult(t, t, den2);
     fe25519Mult(r.x, t, den);
     fe25519Sq(chk, r.x);
     fe25519Mult(chk, chk, den);

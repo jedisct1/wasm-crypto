@@ -800,22 +800,22 @@ function scalarmult(p: Ge, s: ScalarPacked, q: Ge): void {
         add(p, p);
         add(p, p);
         add(p, p);
-        cmov(t, unchecked(pc[15]), ((b - 16) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[14]), ((b - 15) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[13]), ((b - 14) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[12]), ((b - 13) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[11]), ((b - 12) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[10]), ((b - 11) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[9]), ((b - 10) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[8]), ((b - 9) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[7]), ((b - 8) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[6]), ((b - 7) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[5]), ((b - 6) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[4]), ((b - 5) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[3]), ((b - 4) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[2]), ((b - 3) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[1]), ((b - 2) >>> 8) as u8 & 1);
-        cmov(t, unchecked(pc[0]), ((b - 1) >>> 8) as u8 & 1);
+        geCopy(t, pc[0]);
+        cmov(t, unchecked(pc[15]), (((b ^ 15) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[14]), (((b ^ 14) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[13]), (((b ^ 13) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[12]), (((b ^ 12) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[11]), (((b ^ 11) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[10]), (((b ^ 10) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[9]), (((b ^ 9) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[8]), (((b ^ 8) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[7]), (((b ^ 7) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[6]), (((b ^ 6) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[5]), (((b ^ 5) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[4]), (((b ^ 4) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[3]), (((b ^ 3) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[2]), (((b ^ 2) - 1) >>> 8) as u8 & 1);
+        cmov(t, unchecked(pc[1]), (((b ^ 1) - 1) >>> 8) as u8 & 1);
         add(p, t);
     }
 }

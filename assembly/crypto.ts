@@ -932,6 +932,7 @@ function unpack(r: Ge, p: GePacked, neg: bool = false): bool {
     return c === 0;
 }
 
+// Check if a field element has canonical encoding, ignoring the top bit
 function isCanonical(s: GePacked): bool {
     let c: u32 = (s[31] & 0x7f) ^ 0x7f;
     for (let i = 30; i > 0; --i) {

@@ -648,7 +648,7 @@ function fe25519Mult(o: Fe25519, a: Fe25519, b: Fe25519): void {
     let t = new StaticArray<i64>(31 + 1);
 
     for (let i = 0; i < 16; ++i) {
-        let ai = a[i];
+        let ai = unchecked(a[i]);
         for (let j = 0; j < 16; ++j) {
             t[i + j] += ai * unchecked(b[j]);
         }
@@ -658,6 +658,18 @@ function fe25519Mult(o: Fe25519, a: Fe25519, b: Fe25519): void {
 
 @inline function fe25519Sq(o: Fe25519, a: Fe25519): void {
     fe25519Mult(o, a, a);
+}
+
+function fe25519Sq2(o: Fe25519, a: Fe25519): void {
+    let t = new StaticArray<i64>(31 + 1);
+
+    for (let i = 0; i < 16; ++i) {
+        let ai = 2 * unchecked(a[i]);
+        for (let j = 0; j < 16; ++j) {
+            t[i + j] += ai * unchecked(a[j]);
+        }
+    }
+    fe25519Reduce(o, t);
 }
 
 function fe25519Inverse(o: Fe25519, i: Fe25519): void {
@@ -738,8 +750,8 @@ let Aa = newFe25519(),
     At = newFe25519();
 
 function add(p: Ge, q: Ge): void {
-    fe25519Sub(Aa, p.y, p.x);
-    fe25519Sub(At, q.y, q.x);
+    fe25519Sub(Aa, p.x, p.y);
+    fe25519Sub(At, q.x, q.y);
     fe25519Mult(Aa, Aa, At);
     fe25519Add(Ab, p.x, p.y);
     fe25519Add(At, q.x, q.y);
@@ -757,6 +769,23 @@ function add(p: Ge, q: Ge): void {
     fe25519Mult(p.y, Ah, Ag);
     fe25519Mult(p.z, Ag, Af);
     fe25519Mult(p.t, Ae, Ah);
+}
+
+function dbl(p: Ge): void {
+    fe25519Add(At, p.x, p.y);
+    fe25519Sq(At, At);
+    fe25519Sq(Aa, p.x);
+    fe25519Sq(Ac, p.y);
+    fe25519Add(Ab, Ac, Aa);
+    fe25519Sub(Ac, Ac, Aa);
+    fe25519Sub(Aa, At, Ab);
+    fe25519Sq2(At, p.z);
+    fe25519Sub(At, At, Ac);
+
+    fe25519Mult(p.x, Aa, At);
+    fe25519Mult(p.y, Ab, Ac);
+    fe25519Mult(p.z, Ac, At);
+    fe25519Mult(p.t, Aa, Ab);
 }
 
 @inline function cmov(p: Ge, q: Ge, b: i64): void {
@@ -796,10 +825,10 @@ function scalarmult(p: Ge, s: ScalarPacked, q: Ge): void {
     geCopy(p, pc[0]);
     for (let i = 252; i >= 0; i -= 4) {
         b = (s[(i >>> 3)] >>> (i as u8 & 7)) & 0xf;
-        add(p, p);
-        add(p, p);
-        add(p, p);
-        add(p, p);
+        dbl(p);
+        dbl(p);
+        dbl(p);
+        dbl(p);
         geCopy(t, pc[0]);
         cmov(t, unchecked(pc[15]), (((b ^ 15) - 1) >>> 8) as u8 & 1);
         cmov(t, unchecked(pc[14]), (((b ^ 14) - 1) >>> 8) as u8 & 1);

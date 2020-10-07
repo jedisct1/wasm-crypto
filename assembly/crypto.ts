@@ -691,7 +691,7 @@ function fe25519Inverse(o: Fe25519, i: Fe25519): void {
     fe25519Copy(o, c);
 }
 
-function fe25519Pow2523(o: Fe25519, i: Fe25519): void {
+function fe25519Pow252m3(o: Fe25519, i: Fe25519): void {
     let c = newFe25519();
 
     fe25519Copy(c, i);
@@ -900,7 +900,7 @@ function unpack(r: Ge, p: GePacked, neg: bool = false): bool {
     fe25519Mult(den6, den4, den2);
     fe25519Mult(t, den6, num);
     fe25519Mult(t, t, den);
-    fe25519Pow2523(t, t);
+    fe25519Pow252m3(t, t);
     fe25519Mult(t, t, num);
     fe25519Mult(t, t, den2);
     fe25519Mult(r.x, t, den);
@@ -956,7 +956,7 @@ function ristrettoSqrtRatioM1(x: Fe25519, u: Fe25519, v: Fe25519): bool {
     fe25519Mult(x, x, v);
     fe25519Mult(x, x, u);
 
-    fe25519Pow2523(x, x);
+    fe25519Pow252m3(x, x);
     fe25519Mult(x, x, v3);
     fe25519Mult(x, x, u);
 

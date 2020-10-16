@@ -586,6 +586,10 @@ function fe25519IsNegative(a: Fe25519): bool {
     return (d[0] & 1) as bool;
 }
 
+function fe25519Neg(f: Fe25519): void {
+    fe25519Sub(f, fe25519_0, f);
+}
+
 function fe25519Cneg(h: Fe25519, f: Fe25519, b: bool): void {
     let negf = newFe25519();
     fe25519Sub(negf, fe25519_0, f);
@@ -771,6 +775,17 @@ function add(p: Ge, q: Ge): void {
     fe25519Mult(p.t, Ae, Ah);
 }
 
+function neg(p: Ge): void {
+    fe25519Neg(p.x);
+    fe25519Neg(p.t);
+}
+
+function sub(p: Ge, q: Ge): void {
+    let negq = newGe();
+    geCopy(negq, q);
+    sub(p, negq);
+}
+
 function dbl(p: Ge): void {
     fe25519Add(At, p.x, p.y);
     fe25519Sq(At, At);
@@ -793,6 +808,12 @@ function dbl(p: Ge): void {
     fe25519Cmov(p.y, q.y, b);
     fe25519Cmov(p.z, q.z, b);
     fe25519Cmov(p.t, q.t, b);
+}
+
+function clearCofactor(p: Ge): void {
+    dbl(p);
+    dbl(p);
+    dbl(p);
 }
 
 function pack(r: GePacked, p: Ge): void {
@@ -915,7 +936,7 @@ function unpack(r: Ge, p: GePacked, neg: bool = false): bool {
         return false;
     }
     if ((fe25519IsNegative(r.x) as u8 === (p[31] >> 7)) === neg) {
-        fe25519Sub(r.x, fe25519_0, r.x);
+        fe25519Neg(r.x);
     }
     fe25519Mult(r.t, r.x, r.y);
 
@@ -1009,7 +1030,7 @@ function ristrettoUnpack(h: Ge, s: GePacked, neg: bool = false): bool {
     fe25519Sq(u2u2, u2);
 
     fe25519Mult(v, D, u1u1);
-    fe25519Sub(v, fe25519_0, v);
+    fe25519Neg(v);
     fe25519Sub(v, v, u2u2);
 
     fe25519Mult(v_u2u2, v, u2u2);
@@ -1028,7 +1049,7 @@ function ristrettoUnpack(h: Ge, s: GePacked, neg: bool = false): bool {
 
     fe25519Copy(z, fe25519_1);
     if (neg) {
-        fe25519Sub(y, fe25519_0, y);
+        fe25519Neg(y);
     }
     fe25519Mult(t, x, y);
 
@@ -1104,7 +1125,7 @@ function ristrettoElligator(p: Ge, t: Fe25519): void {
     let not_square = 1 - (ristrettoSqrtRatioM1(s, u, v) as i64);
     fe25519Mult(s_prime, s, t);
     fe25519Abs(s_prime, s_prime);
-    fe25519Sub(s_prime, fe25519_0, s_prime);
+    fe25519Neg(s_prime);
     fe25519Cmov(s, s_prime, not_square);
     fe25519Cmov(c, r, not_square);
 
@@ -1811,6 +1832,23 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
 }
 
 /**
+ * Multiply a point by the cofactor
+ * @param q Compressed EC point
+ * @returns Compressed EC point `q * 8`
+ */
+@global export function faEdClearCofcator(q: Uint8Array): Uint8Array | null {
+    let p_ = newGe();
+    let q_ = newGe();
+    if (!unpack(q_, q, false)) {
+        return null;
+    }
+    clearCofactor(q_);
+    let p = newGePacked();
+    pack(p, p_);
+    return p;
+}
+
+/**
  * Multiply a point `q` by a scalar `s`
  * @param q Compressed EC point
  * @param s Scalar
@@ -1940,6 +1978,22 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
     pack(o, p_);
 
     return o;
+}
+
+/**
+ * Flip the X coordinate of a point
+ * @param p Compressed EC point
+ * @returns `-p`
+ */
+@global export function faEdPointNeg(p: Uint8Array): Uint8Array | null {
+    let negp = newGePacked();
+    let negp_ = newGe();
+    if (!unpack(negp_, p, true)) {
+        return null;
+    }
+    pack(negp, negp_);
+
+    return negp;
 }
 
 /**

@@ -24,7 +24,7 @@ describe("memzero", (): void => {
 });
 
 describe("bin2hex", (): void => {
-  it("shoud encode to hex", (): void => {
+  it("should encode to hex", (): void => {
     let bin = new Uint8Array(25);
     for (let i = 0; i < 25; i++) {
       bin[i] = i * 5;
@@ -35,7 +35,7 @@ describe("bin2hex", (): void => {
 })
 
 describe("hex2bin", (): void => {
-  it("shoud decode from hex", (): void => {
+  it("should decode from hex", (): void => {
     let hex = "00050a0f14191e23282d32373c41464b50555a5f64696e7378";
     let bin = hex2bin(hex);
     let ref = new Uint8Array(25);

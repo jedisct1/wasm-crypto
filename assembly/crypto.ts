@@ -783,7 +783,8 @@ function neg(p: Ge): void {
 function sub(p: Ge, q: Ge): void {
     let negq = newGe();
     geCopy(negq, q);
-    sub(p, negq);
+    neg(negq);
+    add(p, negq);
 }
 
 function dbl(p: Ge): void {
@@ -963,6 +964,13 @@ function isCanonical(s: GePacked): bool {
     let d = ((0xed - 1) as u32 - (s[0] as u32)) >> 8;
 
     return !(c & d & 1);
+}
+
+function hasLowOrder(q: Ge): bool {
+    let p = newGe();
+    geCopy(p, q);
+    clearCofactor(p);
+    return fe25519IsZero(p.x);
 }
 
 // Ristretto encoding
@@ -1247,29 +1255,38 @@ function _signEdDetached(sig: Signature, m: Uint8Array, kp: KeyPair, Z: Uint8Arr
 }
 
 function _signEdVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool {
-    if (isIdentity(pk) || !isCanonical(pk) || !scIsLtL(sig.subarray(32))) {
+    if (!isCanonical(pk) || !scIsLtL(sig.subarray(32))) {
         return false;
     }
     let A = newGe();
-    if (!unpack(A, pk, true)) {
+    if (!unpack(A, pk, true) || hasLowOrder(A)) {
         return false;
     }
-    let h = newScalarDouble();
+    let expectedR_ = sig.subarray(0, 32);
+    if (!isCanonical(expectedR_)) {
+        return false;
+    }
+    let expectedR = newGe();
+    if (!unpack(expectedR, expectedR_, false)) {
+        return false;
+    }
+
+    let hram = newScalarDouble();
     let hs = _hashInit();
     let r = _hashUpdate(hs, sig, 32, 0);
     r = _hashUpdate(hs, pk, 32, r);
     r = _hashUpdate(hs, m, m.length, r);
-    _hashFinal(hs, h, 32 + 32 + m.length, r);
-    scReduce(h);
+    _hashFinal(hs, hram, 32 + 32 + m.length, r);
+    scReduce(hram);
 
-    let R = newGe();
-    let rcheck = newFe25519Packed();
-    scalarmult(R, h, A);
-    scalarmultBase(A, sig.subarray(32));
-    add(R, A);
-    pack(rcheck, R);
+    let ah = newGe();
+    scalarmult(ah, hram, A);
+    let sbAh = newGe();
+    scalarmultBase(sbAh, sig.subarray(32));
+    add(sbAh, ah);
+    sub(expectedR, sbAh);
 
-    return verify32(rcheck, sig.subarray(0, 32));
+    return hasLowOrder(expectedR);
 }
 
 // Signatures over Ristretto

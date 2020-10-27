@@ -8,7 +8,7 @@ A WebAssembly (via AssemblyScript) set of cryptographic primitives for building 
 Currently provides:
 
 - [RFC 8032](https://tools.ietf.org/html/rfc8032)/libsodium-compatible detached [EdDSA signatures](https://doc.libsodium.org/public-key_cryptography/public-key_signatures)
-- Ed25519 deterministic and non-deterministic signatures.
+- Ed25519 deterministic and non-deterministic signatures with cofactored verification.
 - Deterministic and non-deterministic signatures over the Ristretto group.
 - Hashing (simple + multi-parts)
 - Authentication (HMAC-SHA-512)

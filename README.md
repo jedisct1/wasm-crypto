@@ -1,4 +1,4 @@
-[![npm version](https://badge.fury.io/js/wasm-crypto.svg)](https://badge.fury.io/js/wasm-crypto)
+[![npm version](https://badge.fury.io/js/wasm-crypto.svg)](https://www.npmjs.com/package/wasm-crypto)
 [![GitHub Actions CI](https://github.com/jedisct1/wasm-crypto/workflows/GitHub%20Actions%20CI/badge.svg)](https://github.com/jedisct1/wasm-crypto/actions)
 
 # ![wasm-crypto](https://raw.github.com/jedisct1/wasm-crypto/master/logo.png)

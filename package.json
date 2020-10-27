@@ -1,6 +1,6 @@
 {
     "name": "wasm-crypto",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "scripts": {
         "asbuild:untouched": "asc assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm",
         "asbuild:small": "asc assembly/crypto.ts assembly/precomp.ts -b build/small.wasm -t build/small.wat --sourceMap -O3z",
@@ -10,7 +10,7 @@
     },
     "devDependencies": {
         "@as-pect/cli": "^4.0.0",
-        "assemblyscript": "^0.16.0"
+        "assemblyscript": "^0.17.0"
     },
     "types": "assembly/index",
     "author": "Frank Denis <j at pureftpd dot org>",

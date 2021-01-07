@@ -711,7 +711,6 @@ function fe25519Pow252m3(o: Fe25519, i: Fe25519): void {
 
 // Ed25519 group arithmetic
 
-@final @unmanaged
 class Ge {
     x: Fe25519;
     y: Fe25519;

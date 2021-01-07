@@ -6,6 +6,9 @@ describe("field arithmetic using scalars", (): void => {
       x[i] = i;
       y[i] = i + 0x42;
     }
+    expect<bool>(faScalarIsCanonical(x)).toBeFalsy();
+    expect<bool>(faScalarIsCanonical(y)).toBeFalsy();
+
     let x_plus_y_times_10 = faScalarAdd(x, y);
     for (let i = 0; i < 9; i++) {
       x_plus_y_times_10 = faScalarAdd(x_plus_y_times_10, y);
@@ -28,7 +31,9 @@ describe("field arithmetic using scalars", (): void => {
     expect<bool>(equals(minus_one, minus_one2)).toBeTruthy();
 
     let x2 = faScalarSub(x_plus_y10, y10);
+    expect<bool>(faScalarIsCanonical(x2)).toBeTruthy();
     x = faScalarReduce(x);
+    expect<bool>(faScalarIsCanonical(x)).toBeTruthy();
     expect<bool>(equals(x, x2)).toBeTruthy();
 
     let x_inv = faScalarInverse(x);
@@ -46,6 +51,6 @@ describe("field arithmetic using scalars", (): void => {
     let cof = faScalarCofactorMult(one);
     expect<u8>(cof[0]).toBe(8);
 
-    expect<bool>(faScalarIsCanonical(x)).toBeTruthy();
+    expect<bool>(faScalarIsCanonical(cof)).toBeTruthy();
   });
 });

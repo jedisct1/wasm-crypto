@@ -266,8 +266,8 @@ _L[31] = 16;
 function scIsLtL(s: ScalarPacked): bool {
     let c: u8 = 0, n: u8 = 1, i = 32;
 
-    if ((unchecked(s[31]) & 0xf0) !== 0) {
-        return false;
+    if ((unchecked(s[31]) & 0xf0) === 0) {
+        return true;
     }
     do {
         i--;

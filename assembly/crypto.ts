@@ -1978,7 +1978,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
 }
 
 /**
- * Point substraction
+ * Point subtraction
  * @param p Compressed EC point
  * @param q Compressed EC point
  * @returns `p` - `q`
@@ -2081,7 +2081,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
 }
 
 /**
- * Point substraction
+ * Point subtraction
  * @param p Ristretto-compressed EC point
  * @param q Ristretto-compressed EC point
  * @returns `p` - `q`

@@ -60,19 +60,19 @@ class Sha256 {
 
     static expand(w: StaticArray<u32>): void {
         for (let i = 0; i < 16; i++) {
-            (w[i] += w[(i + 9) & 15] + Sha256.sigma1(w[(i + 14) & 15]) + Sha256.sigma0(w[(i + 1) & 15]));
+            unchecked(w[i] += w[(i + 9) & 15] + Sha256.sigma1(w[(i + 14) & 15]) + Sha256.sigma0(w[(i + 1) & 15]));
         }
     }
 
     static handle(r: StaticArray<u32>, w: StaticArray<u32>, c: u32[]): void {
         for (let i = 0; i < 16; i++) {
             var x = (r[7 & (7 - i)] + w[i] + c[i]);
-            x += (Sha256.Sigma1(r[7 & (4 - i)]));
-            x += (Sha256.Ch(r[7 & (4 - i)], r[7 & (5 - i)], r[7 & (6 - i)]));
-            (r[7 & (3 - i)] += x);
-            x += (Sha256.Sigma0(r[7 & (0 - i)]));
-            x += (Sha256.Maj(r[7 & (0 - i)], r[7 & (1 - i)], r[7 & (2 - i)]));
-            (r[7 & (7 - i)] = x);
+            x += unchecked(Sha256.Sigma1(r[7 & (4 - i)]));
+            x += unchecked(Sha256.Ch(r[7 & (4 - i)], r[7 & (5 - i)], r[7 & (6 - i)]));
+            unchecked(r[7 & (3 - i)] += x);
+            x += unchecked(Sha256.Sigma0(r[7 & (0 - i)]));
+            x += unchecked(Sha256.Maj(r[7 & (0 - i)], r[7 & (1 - i)], r[7 & (2 - i)]));
+            unchecked(r[7 & (7 - i)] = x);
         }
     }
 
@@ -107,15 +107,15 @@ class Sha256 {
             Sha256.expand(w);
             Sha256.handle(r, w, Sha256.K.slice(48));
             for (let i = 0; i < 8; ++i) {
-                let x = (r[i] + z[i]);
-                (z[i] = x);
-                (r[i] = x);
+                let x = unchecked(r[i] + z[i]);
+                unchecked(z[i] = x);
+                unchecked(r[i] = x);
             }
             pos += 64;
             n -= 64;
         }
         for (let i = 0; i < 8; ++i) {
-            store32_be(st, i << 2, (z[i]));
+            store32_be(st, i << 2, unchecked(z[i]));
         }
         return n;
     }

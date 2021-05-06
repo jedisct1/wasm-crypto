@@ -11,14 +11,10 @@ Currently provides:
 - Ed25519 deterministic and non-deterministic signatures with cofactored verification.
 - Deterministic and non-deterministic signatures over the Ristretto group.
 - Hashing (simple + multi-parts)
-- Authentication (HMAC-SHA-512)
+- Authentication (HMAC-SHA-512, HMAC-SHA-256)
 - Point validation, point addition, scalar multiplication with and without clamping over Edwards25519 using the standard Ed25519 point encoding.
 - Fast encoded element validation, hash-to-group, addition, scalar multiplication over the [Ristretto](https://ristretto.group) prime-order group.
 - Scalar reduction, scalar multiplication, scalar inversion mod the order of the prime-order groups for multiparty computation and oblivious pseudorandom functions.
 - Constant-time comparison and encoding.
 
-## Javascript (TypeScript) bindings
-
-WASM-Crypto currently lacks a nice set of Javascript wrappers.
-
-This is fairly easy (see the [Terrarium access control example](https://github.com/jedisct1/fastly-terrarium-examples/tree/master/access_control_example) for an example), so if you think you can help, please do!
+[Example use case](https://github.com/jedisct1/fastly-terrarium-examples/tree/master/access_control_example).

@@ -43,11 +43,29 @@ class Sha512 {
     }
 
     @inline static Ch(x: u64, y: u64, z: u64): u64 {
-        return (x & y) ^ (~x & z);
+        return z ^ (x & (y ^ z));
     }
 
     @inline static Maj(x: u64, y: u64, z: u64): u64 {
-        return (x & y) ^ (x & z) ^ (y & z);
+        return (x & (y ^ z)) ^ (y & z);
+    }
+
+    static expand(w: StaticArray<u64>): void {
+        for (let i = 0; i < 16; i++) {
+            unchecked(w[i] += w[(i + 9) & 15] + Sha512.sigma1(w[(i + 14) & 15]) + Sha512.sigma0(w[(i + 1) & 15]));
+        }
+    }
+
+    static handle(r: StaticArray<u64>, w: StaticArray<u64>, c: u64[]): void {
+        for (let i = 0; i < 16; i++) {
+            var x = unchecked(r[7 & (7 - i)] + w[i] + c[i]);
+            x += unchecked(Sha512.Sigma1(r[7 & (4 - i)]));
+            x += unchecked(Sha512.Ch(r[7 & (4 - i)], r[7 & (5 - i)], r[7 & (6 - i)]));
+            unchecked(r[7 & (3 - i)] += x);
+            x += unchecked(Sha512.Sigma0(r[7 & (0 - i)]));
+            x += unchecked(Sha512.Maj(r[7 & (0 - i)], r[7 & (1 - i)], r[7 & (2 - i)]));
+            unchecked(r[7 & (7 - i)] = x);
+        }
     }
 
     static K: u64[] = [
@@ -75,44 +93,35 @@ class Sha512 {
 
     static _hashblocks(st: Uint8Array, m: Uint8Array, n_: isize): isize {
         let z = new StaticArray<u64>(8),
-            b = new StaticArray<u64>(8),
-            a = new StaticArray<u64>(8),
-            w = new StaticArray<u64>(16),
-            t: u64;
-
+            r = new StaticArray<u64>(8),
+            w = new StaticArray<u64>(16);
         for (let i = 0; i < 8; ++i) {
-            z[i] = a[i] = load64_be(st, i << 3);
+            unchecked(z[i] = r[i] = load64_be(st, i << 3));
         }
         let pos = 0, n = n_;
         while (n >= 128) {
             for (let i = 0; i < 16; ++i) {
                 w[i] = load64_be(m, (i << 3) + pos);
             }
-            for (let i = 0; i < 80; ++i) {
-                for (let j = 0; j < 8; ++j) {
-                    b[j] = a[j];
-                }
-                t = a[7] + Sha512.Sigma1(a[4]) + Sha512.Ch(a[4], a[5], a[6]) + Sha512.K[i] + w[i & 15];
-                b[7] = t + Sha512.Sigma0(a[0]) + Sha512.Maj(a[0], a[1], a[2]);
-                b[3] += t;
-                for (let j = 0; j < 8; ++j) {
-                    a[(j + 1) & 7] = b[j];
-                }
-                if ((i & 15) === 15) {
-                    for (let j = 0; j < 16; ++j) {
-                        w[j] += w[(j + 9) & 15] + Sha512.sigma0(w[(j + 1) & 15]) + Sha512.sigma1(w[(j + 14) & 15]);
-                    }
-                }
-            }
+            Sha512.handle(r, w, Sha512.K.slice(0));
+            Sha512.expand(w);
+            Sha512.handle(r, w, Sha512.K.slice(16));
+            Sha512.expand(w);
+            Sha512.handle(r, w, Sha512.K.slice(32));
+            Sha512.expand(w);
+            Sha512.handle(r, w, Sha512.K.slice(48));
+            Sha512.expand(w);
+            Sha512.handle(r, w, Sha512.K.slice(64));
             for (let i = 0; i < 8; ++i) {
-                a[i] += z[i];
-                z[i] = a[i];
+                let x = unchecked(r[i] + z[i]);
+                unchecked(z[i] = x);
+                unchecked(r[i] = x);
             }
             pos += 128;
             n -= 128;
         }
         for (let i = 0; i < 8; ++i) {
-            store64_be(st, i << 3, z[i]);
+            store64_be(st, i << 3, unchecked(z[i]));
         }
         return n;
     }
@@ -123,7 +132,6 @@ class Sha512 {
         0x51, 0x0e, 0x52, 0x7f, 0xad, 0xe6, 0x82, 0xd1, 0x9b, 0x05, 0x68, 0x8c, 0x2b, 0x3e, 0x6c, 0x1f,
         0x1f, 0x83, 0xd9, 0xab, 0xfb, 0x41, 0xbd, 0x6b, 0x5b, 0xe0, 0xcd, 0x19, 0x13, 0x7e, 0x21, 0x79,
     ];
-
 
     static _hashInit(): Uint8Array {
         let st = new Uint8Array(64 + 128 + 8 * 2);

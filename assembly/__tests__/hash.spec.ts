@@ -6,4 +6,14 @@ describe("hashing", (): void => {
             "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e"
         );
     });
+
+    it("should compute the hash of a non-empty string", (): void => {
+        let msg = new Uint8Array(1);
+        msg[0] = 42;
+        let h = hash(msg)
+        let hex = bin2hex(h);
+        expect<string>(hex).toBe(
+            "7846cdd4c2b9052768b8901640122e5282e0b833a6a58312a7763472d448ee23781c7f08d90793fdfe71ffe74238cf6e4aa778cc9bb8cec03ea7268d4893a502"
+        );
+    });
 });

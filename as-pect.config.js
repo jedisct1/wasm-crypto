@@ -12,7 +12,6 @@ module.exports = {
    */
   flags: {
     "--debug": [],
-    "-O3": [],
 
     /** This is required. Do not change this. */
     "--binaryFile": ["output.wasm"],

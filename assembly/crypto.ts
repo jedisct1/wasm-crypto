@@ -200,7 +200,7 @@ class Sha256 {
         r = Sha256._hashUpdate(st, m, m.length, r);
         Sha256._hashFinal(st, b, 64 + m.length, r);
 
-        return hash(b);
+        return sha256Hash(b);
     }
 }
 
@@ -278,7 +278,8 @@ class Sha512 {
             r = new StaticArray<u64>(8),
             w = new StaticArray<u64>(16);
         for (let i = 0; i < 8; ++i) {
-            unchecked(z[i] = r[i] = load64_be(st, i << 3));
+            z[i] = load64_be(st, i << 3);
+            r[i] = z[i];
         }
         let pos = 0, n = n_;
         while (n >= 128) {
@@ -295,15 +296,15 @@ class Sha512 {
             Sha512.expand(w);
             Sha512.handle(r, w, Sha512.K.slice(64));
             for (let i = 0; i < 8; ++i) {
-                let x = unchecked(r[i] + z[i]);
-                unchecked(z[i] = x);
-                unchecked(r[i] = x);
+                let x = r[i] + z[i];
+                z[i] = x;
+                r[i] = x;
             }
             pos += 128;
             n -= 128;
         }
         for (let i = 0; i < 8; ++i) {
-            store64_be(st, i << 3, unchecked(z[i]));
+            store64_be(st, i << 3, z[i]);
         }
         return n;
     }
@@ -325,38 +326,40 @@ class Sha512 {
     }
 
     static _hashUpdate(st: Uint8Array, m: Uint8Array, n: isize, r: isize): isize {
-        let w = st.subarray(64);
-        let av = <isize>128 - r;
-        let tc = min(n, av);
-
-        setU8(w, m.subarray(0, <aisize>tc), r);
-        r += tc;
-        n -= tc;
-        let pos = tc;
+        let buffered = st.subarray(64);
+        let still_available_in_buffer = <isize>128 - r;
+        let copiable_to_buffer = min(n, still_available_in_buffer);
+        setU8(buffered, m.subarray(0, <aisize>copiable_to_buffer), r);
+        r += copiable_to_buffer;
+        n -= copiable_to_buffer;
+        let pos = 0;
         if (r === 128) {
-            Sha512._hashblocks(st, w, 128);
+            Sha512._hashblocks(st, buffered, 128);
             r = 0;
+            pos = 128;
         }
-        if (r === 0 && n > 0) {
-            let rb = Sha512._hashblocks(st, m.subarray(<aisize>pos), n);
-            if (rb > 0) {
-                setU8(w, m.subarray(<aisize>(pos + n - rb)));
-                r = rb;
-            }
+        if (n == 0) {
+            return r;
+        }
+        r = Sha512._hashblocks(st, m.subarray(<aisize>pos), n);
+        if (r > 0) {
+            setU8(buffered, m.subarray(<aisize>(pos + n - r)));
         }
         return r;
     }
 
     static _hashFinal(st: Uint8Array, out: Uint8Array, t: isize, r: isize): void {
-        let w = st.subarray(64);
-        let x = new Uint8Array(256);
-
-        setU8(x, w.subarray(0, <aisize>r));
-        x[<aisize>r] = 0x80;
-        r = 256 - (isize(r < 112) << 7);
-        x[<aisize>(r - 9)] = 0;
-        store64_be(x, r - 8, t << 3);
-        Sha512._hashblocks(st, x, r);
+        let buffered = st.subarray(64);
+        let padded = new Uint8Array(256);
+        setU8(padded, buffered.subarray(0, <aisize>r));
+        padded[<aisize>r] = 0x80;
+        if (r < 112) {
+            store64_be(padded, 128 - 8, t * 8);
+            Sha512._hashblocks(st, padded, 128);
+        } else {
+            store64_be(padded, 256 - 8, t * 8);
+            Sha512._hashblocks(st, padded, 256);
+        }
         for (let i = 0; i < 64; ++i) {
             out[i] = st[i];
         }
@@ -365,7 +368,6 @@ class Sha512 {
     static _hash(out: Uint8Array, m: Uint8Array, n: isize): void {
         let st = Sha512._hashInit();
         let r = Sha512._hashUpdate(st, m, n, 0);
-
         Sha512._hashFinal(st, out, n, r);
     }
 
@@ -1870,10 +1872,9 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns Hash
  */
 @global export function hash(m: Uint8Array): Uint8Array {
-    let st = hashInit()64
-    hashUpdate(st, m);
-
-    return hashFinal(st);
+    let h = new Uint8Array(<aisize>HASH_BYTES);
+    Sha512._hash(h, m, m.length);
+    return h;
 }
 
 /**
@@ -1931,11 +1932,9 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns Hash
  */
 @global export function sha256Hash(m: Uint8Array): Uint8Array {
-    let st = sha256HashInit();
-
-    sha256HashUpdate(st, m);
-
-    return sha256HashFinal(st);
+    let h = new Uint8Array(<aisize>HASH_BYTES);
+    Sha256._hash(h, m, m.length);
+    return h;
 }
 
 /**

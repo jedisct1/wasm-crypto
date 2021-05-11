@@ -1954,7 +1954,7 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns Hash
  */
 @global export function sha256Hash(m: Uint8Array): Uint8Array {
-    let h = new Uint8Array(<aisize>SHA256_HASH_BYTES));
+    let h = new Uint8Array(<aisize>SHA256_HASH_BYTES);
     Sha256._hash(h, m, m.length);
     return h;
 }

@@ -1,3 +1,5 @@
+import { bin2hex, hash, hashInit, hashUpdate, hashFinal, hmac, sha256Hash, sha256HashInit, sha256HashUpdate, sha256HashFinal, sha256Hmac } from "../crypto";
+
 describe("hashing (SHA-512)", (): void => {
     it("should compute the hash of an empty string", (): void => {
         let h = hashFinal(hashInit());
@@ -22,6 +24,42 @@ describe("hashing (SHA-512)", (): void => {
         let hex = bin2hex(h);
         expect<string>(hex).toBe(
             "59dac56c13b43989000f645d7f0660500d043c9758d05f0afc104729279e6458a6a4b56bc7f3051342aa38663ae06b3895b65e0512d5c0037c56cc84746d36a3"
+        );
+    });
+
+    it("should compute the hash of a split string (SHA-512)", (): void => {
+        let msg1 = Uint8Array.wrap(String.UTF8.encode("This is a test vector for the hash function, "));
+        let msg2 = Uint8Array.wrap(String.UTF8.encode("with an input larger than the block size"));
+        let st = hashInit();
+        hashUpdate(st, msg1);
+        hashUpdate(st, msg2);
+        let h = hashFinal(st);
+        let hex = bin2hex(h);
+        expect<string>(hex).toBe(
+            "59dac56c13b43989000f645d7f0660500d043c9758d05f0afc104729279e6458a6a4b56bc7f3051342aa38663ae06b3895b65e0512d5c0037c56cc84746d36a3"
+        );
+    });
+
+    it("should compute the hash of a block-aligned split string (SHA-512)", (): void => {
+        let msg1 = Uint8Array.wrap(String.UTF8.encode("This is a test vector for the hash function with a length of 64<"));
+        let msg2 = Uint8Array.wrap(String.UTF8.encode(">This is a test vector for the hash function with a length of 64"));
+        let st = hashInit();
+        hashUpdate(st, msg1);
+        hashUpdate(st, msg2);
+        let h = hashFinal(st);
+        let hex = bin2hex(h);
+        expect<string>(hex).toBe(
+            "1d0ad8f26d8df0a560d503d939062b267da4f8a309a3d5a2111609eb553c64d7f7582d10b18b4af31dd1a8ac90d3aaedeb035fb07423377fd6dcaf284ef63930"
+        );
+    });
+
+    it("should compute a HMAC (SHA-512)", (): void => {
+        let msg = Uint8Array.wrap(String.UTF8.encode("test"));
+        let key = Uint8Array.wrap(String.UTF8.encode("test"));
+        let h = hmac(msg, key);
+        let hex = bin2hex(h);
+        expect<string>(hex).toBe(
+            "9ba1f63365a6caf66e46348f43cdef956015bea997adeb06e69007ee3ff517df10fc5eb860da3d43b82c2a040c931119d2dfc6d08e253742293a868cc2d82015"
         );
     });
 });
@@ -53,4 +91,28 @@ describe("hashing (SHA-256)", (): void => {
             "e8f6644d4670f6c3d817af6dfcaec03ab6ab58042b03064f4915658e0bc4d443"
         );
     });
+
+    it("should compute the hash of a split string (SHA-256)", (): void => {
+        let msg1 = Uint8Array.wrap(String.UTF8.encode("This is a test vector for the hash function, "));
+        let msg2 = Uint8Array.wrap(String.UTF8.encode("with an input larger than the block size"));
+        let st = sha256HashInit();
+        sha256HashUpdate(st, msg1);
+        sha256HashUpdate(st, msg2);
+        let h = sha256HashFinal(st);
+        let hex = bin2hex(h);
+        expect<string>(hex).toBe(
+            "e8f6644d4670f6c3d817af6dfcaec03ab6ab58042b03064f4915658e0bc4d443"
+        );
+    });
+
+    it("should compute a HMAC (SHA-256)", (): void => {
+        let msg = Uint8Array.wrap(String.UTF8.encode("test"));
+        let key = Uint8Array.wrap(String.UTF8.encode("test"));
+        let h = sha256Hmac(msg, key);
+        let hex = bin2hex(h);
+        expect<string>(hex).toBe(
+            "88cd2108b5347d973cf39cdf9053d7dd42704876d8c9a9bd8e2d168259d3ddf7"
+        );
+    });
 });
+

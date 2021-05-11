@@ -148,7 +148,7 @@ class Sha256 {
         if (r === 64) {
             Sha256._hashblocks(st, buffered, 64);
             r = 0;
-            pos = 64;
+            pos = copiable_to_buffer;
         }
         if (n == 0) {
             setU8(obuffered, buffered);
@@ -189,28 +189,29 @@ class Sha256 {
     // HMAC
 
     static _hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
-        let b = new Uint8Array(128);
-        let ib = b.subarray(64);
         if (k.length > 64) {
             k = hash(k);
         }
+        let b = new Uint8Array(64);
         setU8(b, k);
-        for (let i = 0; i < 64; ++i) {
-            b[i] ^= 0x5c;
+        for (let i = 0; i < b.length; ++i) {
+            b[i] ^= 0x36;
         }
-        setU8(ib, k);
-        for (let i = 0; i < 64; ++i) {
-            ib[i] ^= 0x36;
-        }
+        let out = new Uint8Array(32);
         let st = Sha256._hashInit();
-        let r = Sha256._hashUpdate(st, ib, 64, 0);
+        let r = Sha256._hashUpdate(st, b, b.length, 0);
         r = Sha256._hashUpdate(st, m, m.length, r);
-        Sha256._hashFinal(st, b, 64 + m.length, r);
-
-        return sha256Hash(b);
+        Sha256._hashFinal(st, out, b.length + m.length, r);
+        for (let i = 0; i < b.length; ++i) {
+            b[i] ^= 0x6a;
+        }
+        st = Sha256._hashInit();
+        r = Sha256._hashUpdate(st, b, b.length, 0);
+        r = Sha256._hashUpdate(st, out, out.length, r);
+        Sha256._hashFinal(st, out, b.length + out.length, r);
+        return out;
     }
 }
-
 
 // SHA512
 
@@ -346,7 +347,7 @@ class Sha512 {
         if (r === 128) {
             Sha512._hashblocks(st, buffered, 128);
             r = 0;
-            pos = 128;
+            pos = copiable_to_buffer;
         }
         if (n == 0) {
             setU8(obuffered, buffered);
@@ -386,25 +387,27 @@ class Sha512 {
     // HMAC
 
     static _hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
-        let b = new Uint8Array(256);
-        let ib = b.subarray(128);
         if (k.length > 128) {
             k = hash(k);
         }
+        let b = new Uint8Array(128);
         setU8(b, k);
-        for (let i = 0; i < 128; ++i) {
-            b[i] ^= 0x5c;
+        for (let i = 0; i < b.length; ++i) {
+            b[i] ^= 0x36;
         }
-        setU8(ib, k);
-        for (let i = 0; i < 128; ++i) {
-            ib[i] ^= 0x36;
-        }
+        let out = new Uint8Array(64);
         let st = Sha512._hashInit();
-        let r = Sha512._hashUpdate(st, ib, 128, 0);
+        let r = Sha512._hashUpdate(st, b, b.length, 0);
         r = Sha512._hashUpdate(st, m, m.length, r);
-        Sha512._hashFinal(st, b, 128 + m.length, r);
-
-        return hash(b);
+        Sha512._hashFinal(st, out, b.length + m.length, r);
+        for (let i = 0; i < b.length; ++i) {
+            b[i] ^= 0x6a;
+        }
+        st = Sha512._hashInit();
+        r = Sha512._hashUpdate(st, b, b.length, 0);
+        r = Sha512._hashUpdate(st, out, out.length, r);
+        Sha512._hashFinal(st, out, b.length + out.length, r);
+        return out;
     }
 }
 
@@ -1926,7 +1929,6 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
     let r = load64_be(st, 32 + 64);
     let t = load64_be(st, 32 + 64 + 8);
     let n = m.length;
-
     t += n;
     r = Sha256._hashUpdate(st, m, n, r as isize);
     store64_be(st, 32 + 64, r as u64);

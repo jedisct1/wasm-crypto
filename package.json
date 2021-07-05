@@ -8,6 +8,8 @@
         "asbuild": "npm run asbuild:optimized",
         "test": "asp --verbose"
     },
+    "typing": "assembly/crypto.ts",
+    "ascMain": "assembly/crypto.ts",
     "devDependencies": {
         "@as-pect/cli": "^6.2.0",
         "assemblyscript": "^0.19.3"

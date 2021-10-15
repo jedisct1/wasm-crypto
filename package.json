@@ -11,8 +11,8 @@
     "types": "assembly/crypto.ts",
     "ascMain": "assembly/crypto.ts",
     "devDependencies": {
-        "@as-pect/cli": "^6.2.0",
-        "assemblyscript": "^0.19.3"
+        "@as-pect/cli": "^6.2.4",
+        "assemblyscript": "^0.19.17"
     },
     "types": "assembly/index",
     "author": "Frank Denis <j at pureftpd dot org>",

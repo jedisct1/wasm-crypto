@@ -1,6 +1,6 @@
 {
     "name": "wasm-crypto",
-    "version": "0.0.12",
+    "version": "0.0.13",
     "scripts": {
         "asbuild:untouched": "asc assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm",
         "asbuild:small": "asc assembly/crypto.ts assembly/precomp.ts -b build/small.wasm -t build/small.wat --sourceMap -O3z",
@@ -14,7 +14,6 @@
         "@as-pect/cli": "^6.2.4",
         "assemblyscript": "^0.19.22"
     },
-    "types": "assembly/index",
     "author": "Frank Denis <j at pureftpd dot org>",
     "bugs": {
         "url": "https://github.com/jedisct1/wasm-crypto/issues"

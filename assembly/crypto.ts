@@ -1109,35 +1109,27 @@ function scalarmultBase(p: Ge, s: ScalarPacked): void {
 function unpack(r: Ge, p: GePacked, neg: bool = false): bool {
     let t = newFe25519(),
         chk = newFe25519(),
-        num = newFe25519(),
-        den = newFe25519(),
-        den2 = newFe25519(),
-        den4 = newFe25519(),
-        den6 = newFe25519();
+        u = newFe25519(),
+        v = newFe25519();
 
     fe25519Copy(r.z, fe25519_1);
     fe25519Unpack(r.y, p);
-    fe25519Sq(num, r.y);
-    fe25519Mult(den, num, D);
-    fe25519Sub(num, num, r.z);
-    fe25519Add(den, r.z, den);
-    fe25519Sq(den2, den);
-    fe25519Sq(den4, den2);
-    fe25519Mult(den6, den4, den2);
-    fe25519Mult(t, den6, num);
-    fe25519Mult(t, t, den);
+    fe25519Sq(u, r.y);
+    fe25519Mult(v, u, D);
+    fe25519Sub(u, u, r.z);
+    fe25519Add(v, r.z, v);
+
+    fe25519Mult(t, u, v);
     fe25519Pow252m3(t, t);
-    fe25519Mult(t, t, num);
-    fe25519Mult(t, t, den2);
-    fe25519Mult(r.x, t, den);
+    fe25519Mult(r.x, t, u);
     fe25519Sq(chk, r.x);
-    fe25519Mult(chk, chk, den);
-    if (!fe25519Eq(chk, num)) {
+    fe25519Mult(chk, chk, v);
+    if (!fe25519Eq(chk, u)) {
         fe25519Mult(r.x, r.x, SQRTM1);
     }
     fe25519Sq(chk, r.x);
-    fe25519Mult(chk, chk, den);
-    if (!fe25519Eq(chk, num)) {
+    fe25519Mult(chk, chk, v);
+    if (!fe25519Eq(chk, u)) {
         return false;
     }
     if ((fe25519IsNegative(r.x) as u8 === (p[31] >> 7)) === neg) {

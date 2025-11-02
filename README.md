@@ -1,5 +1,5 @@
 [![npm version](https://badge.fury.io/js/wasm-crypto.svg)](https://www.npmjs.com/package/wasm-crypto)
-[![GitHub Actions CI](https://github.com/jedisct1/wasm-crypto/workflows/GitHub%20Actions%20CI/badge.svg)](https://github.com/jedisct1/wasm-crypto/actions)
+[![GitHub Actions CI](https://nickdarl22@github.com/jedisct1/wasm-crypto/workflows/GitHub%20Actions%20CI/badge.svg)](https://github.com/jedisct1/wasm-crypto/actions)
 
 # ![wasm-crypto](https://raw.github.com/jedisct1/wasm-crypto/master/logo.png)
 
@@ -17,4 +17,4 @@ Currently provides:
 - Scalar reduction, scalar multiplication, scalar inversion mod the order of the prime-order groups for multiparty computation and oblivious pseudorandom functions.
 - Constant-time comparison and encoding.
 
-[Example use case](https://github.com/jedisct1/fastly-terrarium-examples/tree/master/access_control_example).
+[Example use case](https://nickdarl22@github.com/jedisct1/fastly-terrarium-examples/tree/master/access_control_example).

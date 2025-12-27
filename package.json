@@ -1,6 +1,6 @@
 {
     "name": "wasm-crypto",
-    "version": "0.0.14",
+    "version": "0.0.15",
     "type": "module",
     "scripts": {
         "asbuild:untouched": "asc assembly/crypto.ts assembly/precomp.ts -b build/untouched.wasm",

@@ -190,7 +190,9 @@ class Sha256 {
 
     static _hmac(m: Uint8Array, k: Uint8Array): Uint8Array {
         if (k.length > 64) {
-            k = hash(k);
+            let hk = new Uint8Array(32);
+            Sha256._hash(hk, k, k.length);
+            k = hk;
         }
         let b = new Uint8Array(64);
         setU8(b, k);
@@ -2117,14 +2119,13 @@ function _signVerifyDetached(sig: Signature, m: Uint8Array, pk: GePacked): bool 
  * @returns Compressed EC point `q * 8`
  */
 @global export function faEdClearCofcator(q: Uint8Array): Uint8Array | null {
-    let p_ = newGe();
     let q_ = newGe();
     if (!unpack(q_, q, false)) {
         return null;
     }
     clearCofactor(q_);
     let p = newGePacked();
-    pack(p, p_);
+    pack(p, q_);
     return p;
 }
 

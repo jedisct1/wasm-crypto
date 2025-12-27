@@ -123,6 +123,31 @@ describe("hashing (SHA-256)", (): void => {
         );
     });
 
+    it("should compute the hash of a 130-byte message (SHA-256)", (): void => {
+        let msg = new Uint8Array(130);
+        for (let i = 0; i < 130; i++) {
+            msg[i] = 0x41; // 'A'
+        }
+        let h = sha256Hash(msg);
+        let hex = bin2hex(h);
+        expect<string>(hex).toBe(
+            "466a1916275bccba527763f930ca4a42a81f55e28559fb66108fc314cda386bd",
+        );
+    });
+
+    it("should compute the hash of a subarray (SHA-256)", (): void => {
+        let full = new Uint8Array(200);
+        for (let i = 0; i < 200; i++) {
+            full[i] = <u8>(i & 0xff);
+        }
+        let sub = full.subarray(64);
+        let h = sha256Hash(sub);
+        let hex = bin2hex(h);
+        expect<string>(hex).toBe(
+            "416bb1cddb4057e57ed368d0536d4a23105d1ca39a5392f43ac26c237582c7be",
+        );
+    });
+
     it("should compute the hash of a split string (SHA-256)", (): void => {
         let msg1 = Uint8Array.wrap(
             String.UTF8.encode("This is a test vector for the hash function, "),

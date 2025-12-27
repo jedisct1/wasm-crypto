@@ -16,19 +16,19 @@ export const U8ARRAY_ID = idof<Uint8Array>();
 }
 
 function load64_be(x: Uint8Array, offset: isize): u64 {
-    return bswap(load<u64>(changetype<usize>(x.buffer) + offset));
+    return bswap(load<u64>(x.dataStart + offset));
 }
 
 function store64_be(x: Uint8Array, offset: isize, u: u64): void {
-    store<u64>(changetype<usize>(x.buffer) + offset, bswap(u));
+    store<u64>(x.dataStart + offset, bswap(u));
 }
 
 function load32_be(x: Uint8Array, offset: isize): u32 {
-    return bswap(load<u32>(changetype<usize>(x.buffer) + offset));
+    return bswap(load<u32>(x.dataStart + offset));
 }
 
 function store32_be(x: Uint8Array, offset: isize, u: u32): void {
-    store<u32>(changetype<usize>(x.buffer) + offset, bswap(u));
+    store<u32>(x.dataStart + offset, bswap(u));
 }
 
 // SHA256
